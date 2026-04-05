@@ -1,0 +1,15 @@
+/* index.css */
+@import "tailwindcss";
+
+#root {
+  width: 100vw; /* Força largura total */
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: block; /* Remove o flex centralizador do root se houver */
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+}

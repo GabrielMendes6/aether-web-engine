@@ -1,0 +1,10 @@
+{
+  "id": "uuid-123",
+  "type": "button",
+  "value": "Comprar Agora",
+  "breakpoints": {
+    "desktop": { "x": 500, "y": 100, "width": "300px", "fontSize": "20px" },
+    "tablet": { "x": 200, "y": 80, "width": "250px", "fontSize": "18px" },
+    "mobile": { "x": 20, "y": 50, "width": "90%", "fontSize": "16px" }
+  }
+}
