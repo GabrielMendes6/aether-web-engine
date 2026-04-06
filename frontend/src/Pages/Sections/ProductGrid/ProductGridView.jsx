@@ -1,46 +1,91 @@
 import React from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 
-export default function ProductGridView({ item, resolved, allProducts, loading }) {
-    if (loading && allProducts.length === 0) return null; // Ou um Shimmer/Skeleton
-    if (allProducts.length === 0) return null; // Não renderiza seção vazia no site
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
-    const { style } = resolved;
-    const cardStyle = item.props?.cardStyle || { width: '250px', height: '380px' };
+import ProdutoItem from '../../../components/ProdutoItem'; 
+export default function ProductGridView({ title, style, allProducts }) {
+    const swiperOptions = {
+        modules: [ Pagination, Autoplay],
+        spaceBetween: 20,
+        slidesPerView: "auto", 
+        centeredSlides: false,
+        observer: true,
+        observeParents: true,
+        navigation: true,
+        pagination: { clickable: true },
+        simulateTouch: true,
+        grabCursor: true,
+        touchStartPreventDefault: false,
+        breakpoints: {
+            1024: { 
+                slidesPerView: style?.columns || 4,
+                slidesPerView: "auto" 
+            },
+        },
+    };
 
     return (
-        <section className="w-full py-12" style={{ backgroundColor: style?.backgroundColor }}>
-            <div className="max-w-7xl mx-auto px-4">
-                <h2 
-                    className="text-3xl font-bold mb-10" 
-                    style={{ color: style?.color, textAlign: style?.textAlign || 'center' }}
-                >
-                    {item.title}
-                </h2>
+        <section className="w-full py-12 bg-white overflow-hidden product-grid-section">
+            <style>
+                {`
+                    /* Container principal do Swiper */
+                    .product-grid-section .swiper {
+                        width: 100%;
+                        /* Removemos o overflow visible aqui e tratamos no container para evitar que saia da tela */
+                        overflow: hidden !important; 
+                        padding: 20px 4px 60px 4px !important; /* Espaço para sombra e paginação */
+                    }
 
-                <div 
-                    className="flex flex-wrap gap-8"
-                    style={{ justifyContent: style?.textAlign === 'center' ? 'center' : 'flex-start' }}
-                >
-                    {allProducts.map((prod) => (
-                        <div 
-                            key={prod.id} 
-                            style={{ 
-                                width: cardStyle.width, 
-                                height: cardStyle.height,
-                                backgroundColor: cardStyle.backgroundColor || '#fff',
-                                borderRadius: cardStyle.borderRadius || '12px'
-                            }}
-                            className="flex flex-col shadow-sm overflow-hidden border border-slate-100"
-                        >
-                            <div className="flex-1 bg-slate-50">
-                                <img src={prod.image} className="w-full h-full object-cover" alt={prod.name} />
-                            </div>
-                            <div className="p-4">
-                                <h3 className="font-bold text-slate-800 truncate">{prod.name}</h3>
-                                <p className="text-blue-600 font-bold">R$ {prod.price}</p>
-                            </div>
-                        </div>
-                    ))}
+                    .product-grid-section .swiper-wrapper {
+                        display: flex !important;
+                    }
+
+                    .product-grid-section .swiper-slide {
+                        width: auto !important;
+                        display: flex;
+                        justify-content: center;
+                    }
+
+
+                `}
+            </style>
+
+            <div className="container mx-auto px-4" style={{ maxWidth: '1400px' }}>
+                {title && (
+                    <div className="mb-10 text-center">
+                        <h2 className="text-3xl font-black uppercase" style={{ color: style?.titleColor }}>
+                            {title}
+                        </h2>
+                    </div>
+                )}
+
+                <div className="w-full relative">
+                    <Swiper {...swiperOptions} className="mySwiper !pb-14">
+                        {allProducts?.map((prod) => (
+                            <SwiperSlide key={prod.id}>
+                                <div 
+                                    className="product-card-wrapper"
+                                    style={{ 
+                                        width: `${style?.cardStyle?.width || 300}px`, 
+                                        height: `${style?.cardStyle?.height || 450}px`,
+                                        position: 'relative'
+                                    }}
+                                >
+                                    <ProdutoItem
+                                        prod={prod}
+                                        isEditing={false}
+                                        isTemplateMaster={false}
+                                        style={style}
+                                        updateContent={() => {}}
+                                    />
+                                </div>
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
                 </div>
             </div>
         </section>

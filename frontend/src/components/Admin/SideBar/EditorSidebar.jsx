@@ -150,7 +150,6 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
     const carrosselFileUpload = async (index, file) => {
         if (!file) return;
 
-        console.log(file)
         setIsUploading(true); // Reutilizando seu estado de loading
 
         const formData = new FormData();

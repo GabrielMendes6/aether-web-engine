@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../../Services/api';
 import {
@@ -14,7 +14,7 @@ import CarouselBannerSection from '../../Pages/Sections/CarouselBannerSection';
 
 const COMPONENT_MAP = {
     'HeroSection': HeroSection,
-    'ProductGrid': ProductGrid,
+    'ProductSection': ProductGrid,
     'FlexSection': FlexSection, // Agora mapeia para o componente inteligente
     'CarrosselBanner': CarouselBannerSection
 };
@@ -30,7 +30,7 @@ const AVAILABLE_COMPONENTS = [
     },
     { name: 'HeroSection', label: 'Banner Principal', defaultContent: { title: 'Novo Titulo', subtitle: 'Subtítulo aqui', cta_text: 'Saiba Mais' } },
     {
-        name: 'ProductGrid',
+        name: 'ProductSection',
         label: 'Grade de Produtos',
         defaultContent: {
             title: 'Nossos Produtos',
@@ -66,7 +66,19 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
     const isMobileView = currentBreakpoint === 'mobile';
     const showDeviceFrame = isMobileView && showAdminTools;
 
-    console.log(showAdminTools)
+    const handleUpdateContent = useCallback((index, newContent) => {
+        setSections(prevSections => {
+            const newSections = [...prevSections];
+            newSections[index] = {
+                ...newSections[index],
+                content: {
+                    ...newSections[index].content,
+                    ...newContent
+                }
+            };
+            return newSections;
+        });
+    }, [setSections]);
 
     const handleCreateSection = async (comp) => {
         setIsCreating(true);
@@ -135,7 +147,6 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                         {sections.map((section, index) => {
                             const Component = COMPONENT_MAP[section.component];
                             if (!Component) return null;
-                            console.log(section.id)
 
                             return (
                                 <div key={`${section.id}-${index}`} className="relative group/section">
@@ -164,14 +175,7 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                                             {...section.content}
                                             isAdmin={isAdmin}
                                             currentBreakpoint={currentBreakpoint}
-                                            updateContent={(newContent) => {
-                                                const updatedSections = [...sections];
-                                                updatedSections[index].content = {
-                                                    ...updatedSections[index].content,
-                                                    ...newContent
-                                                };
-                                                setSections(updatedSections);
-                                            }}
+                                            updateContent={(newContent) => handleUpdateContent(index, newContent)}
                                         />
                                     </section>
                                 </div>

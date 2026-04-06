@@ -30,8 +30,6 @@ export default function SignUp() {
     setLoadingLocal(true);
 
     try {
-      console.log("Tentando cadastrar:", formData); // Log para conferir os dados antes do envio
-      
       await signUp(
         formData.name,
         formData.email,

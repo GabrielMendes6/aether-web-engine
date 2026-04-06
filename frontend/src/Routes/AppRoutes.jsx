@@ -9,6 +9,7 @@ import Dashboard from '../Pages/Dashboard';
 import AdminLayout from '../Pages/Admin/Layout';
 import EditBox from '../Pages/Admin/EditBox';
 import GenericPage from '../Pages/GenericPage';
+import Page404 from '../Pages/Page404';
 
 // --- COMPONENTE DE PROTEÇÃO ---
 // Ele verifica se o usuário está logado. Se não, manda de volta para o Login.
@@ -102,7 +103,9 @@ export default function AppRoutes() {
                 />
 
                 {/* Rota 404 - Caso o usuário digite algo inexistente */}
-                <Route path="*" element={<Navigate to="/" />} />
+                <Route path="*" element={
+                    <Page404 />
+                } />
             </Routes>
         </BrowserRouter>
     );

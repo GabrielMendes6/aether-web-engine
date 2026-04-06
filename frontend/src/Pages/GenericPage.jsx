@@ -19,8 +19,6 @@ export default function GenericPage() {
     const [isSaving, setIsSaving] = useState(false);
     const isEditorMode = !!useMatch("/admin/editor/:slug");
 
-    console.log(isEditorMode); // true se estiver em /admin/editor/home
-
     const loadPageData = async () => {
         setLoading(true);
         try {

@@ -18,9 +18,6 @@ export default function renderTypographySection({block, idx, config, updateBlock
             // 1. Extrai o hover e guarda todo o resto em 'styleWithoutHover'
             const { hover, ...styleWithoutHover } = block.style || {};
             
-            console.log("Estilo antigo:", block.style);
-            console.log("Estilo limpo (sem hover):", styleWithoutHover);
-            
             // 2. Passa o objeto JÁ LIMPO para a função
             updateBlock(idx, { style: styleWithoutHover });
         } else {

@@ -4,77 +4,88 @@ import ProductGridView from './ProductGridView';
 import api from '../../../Services/api';
 
 export default function ProductGrid(props) {
-    // 1. CORREÇÃO DA VALIDAÇÃO: Deve bater com o 'name' do AVAILABLE_COMPONENTS
-    if (!props?.item || props.item.type !== 'ProductGrid') {
-        return null;
-    }
+    // 1. Desestruturação correta com base no PageRenderer
+    // O PageRenderer passa: {...section.content}, isAdmin, updateContent, etc.
+    const { 
+        isAdmin, 
+        updateContent, 
+        title, 
+        style, 
+        produtos = [], 
+        mode = 'random',
+        categoryId = null
+    } = props;
 
-    const { item, isEditing, resolved, onChange } = props;
     const [productsData, setProductsData] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
 
-        // 2. ACESSO AOS DADOS: No seu DB, eles estão na raiz do 'item'
-        const mode = item.mode || 'random';
-        // Buscamos colunas de dentro de style conforme seu defaultContent
-        const limit = item.style?.columns || 4;
-        const categoryId = item.categoryId;
-        const produtos = item.produtos || [];
+        // Definimos o limite com base no style enviado pelo DB ou padrão 4
+        const limit = style?.columns || 4;
 
         const syncProducts = async () => {
             const isAutoMode = mode === 'random' || mode === 'category';
             const isEmpty = !produtos || produtos.length === 0;
 
-            if (isAutoMode && isEmpty) {
-                try {
-                    setLoading(true);
+            try {
+                setLoading(true);
+                let endpoint = '';
+
+                if (isAutoMode && isEmpty) {
                     const params = new URLSearchParams({
                         mode: mode,
                         limit: limit.toString(),
                         category_id: categoryId || ''
                     });
+                    endpoint = `/api/products/mode?${params.toString()}`;
+                } else if (!isEmpty) {
+                    const savedIds = produtos.map(p => p.id).join(',');
+                    endpoint = `/api/products/mode?mode=manual&ids=${savedIds}`;
+                } else {
+                    // Caso não tenha produtos e não seja auto, para o loading
+                    setLoading(false);
+                    return;
+                }
 
-                    const res = await api.get(`/api/products/mode?${params.toString()}`);
-                    const fetched = res.data.products || [];
+                const res = await api.get(endpoint);
+                const fetched = res.data.products || [];
 
-                    if (isMounted && fetched.length > 0) {
-                        setProductsData(fetched);
+                if (isMounted) {
+                    setProductsData(fetched);
+                    
+                    // Se buscou automático e está no modo admin, sincroniza os IDs para o banco
+                    if (isAutoMode && isEmpty && fetched.length > 0) {
                         const newProdutosJson = fetched.map(p => ({ id: p.id, style: {} }));
-
-                        // 3. ATUALIZAÇÃO: Enviamos de volta para o DB na estrutura correta
-                        onChange?.(item.id, { produtos: newProdutosJson });
+                        updateContent?.({ produtos: newProdutosJson });
                     }
-                } catch (err) {
-                    console.error("Erro ProductGrid Fetch:", err);
-                } finally {
-                    if (isMounted) setLoading(false);
                 }
-            } else if (!isEmpty) {
-                const savedIds = produtos.map(p => p.id);
-                try {
-                    const res = await api.get(`/api/products/mode?mode=manual&ids=${savedIds.join(',')}`);
-                    if (isMounted) {
-                        setProductsData(res.data.products || []);
-                    }
-                } catch (err) {
-                    console.error("Erro ProductGrid Manual:", err);
-                } finally {
-                    if (isMounted) setLoading(false);
-                }
+            } catch (err) {
+                console.error("Erro no fetch de produtos:", err);
+            } finally {
+                if (isMounted) setLoading(false);
             }
         };
 
         syncProducts();
         return () => { isMounted = false; };
 
-        // Sincroniza quando o ID ou a lista de produtos mudar
-    }, [item.id, item.produtos?.length, item.mode]);
+    }, [mode, categoryId, produtos?.length, style?.columns]);
 
-    return isEditing ? (
-        <ProductGridEditor {...props} allProducts={productsData} loading={loading} />
+    // 2. Renderização Decisiva
+    // O isAdmin controla se exibimos o Editor ou a View
+    return isAdmin ? (
+        <ProductGridEditor 
+            {...props} 
+            allProducts={productsData} 
+            loading={loading} 
+        />
     ) : (
-        <ProductGridView {...props} allProducts={productsData} loading={loading} />
+        <ProductGridView 
+            {...props} 
+            allProducts={productsData} 
+            loading={loading} 
+        />
     );
 }
