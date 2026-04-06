@@ -14,9 +14,6 @@ use Illuminate\Support\Facades\Password;
 
 class AuthService
 {
-    /**
-     * Create a new class instance.
-     */
     public function __construct()
     {
         //
@@ -48,7 +45,6 @@ class AuthService
         try {
             $newUser->sendEmailVerificationNotification();
         } catch (Exception $e) {
-            // Registra o erro no log do Laravel (storage/logs/laravel.log)
             Log::error("Falha ao enviar e-mail de verificação para: {$newUser->email}", [
                 'error' => $e->getMessage(),
                 'line' => $e->getLine()
@@ -60,7 +56,6 @@ class AuthService
     }
 
     public function login(array $credentials, string $deviceName): string {
-            // Tenta o login. O Auth::attempt já faz o check do Hash internamente.
             if (!Auth::attempt($credentials)) {
                 throw ValidationException::withMessages([
                     'email' => ['As credenciais informadas estão incorretas.'],
@@ -75,13 +70,11 @@ class AuthService
                 ]);
             }
 
-            // Criamos o token e retornamos apenas a string (plainTextToken)
             return $user->createToken($deviceName)->plainTextToken;
         }
 
     public function sendResetLink(string $email): string
     {
-        // O Laravel retorna uma string constante indicando sucesso ou falha
         return Password::sendResetLink(['email' => $email]);
     }
 
@@ -102,16 +95,11 @@ class AuthService
         );
     }
 
-    // app/Services/AuthService.php
-
     public function deleteAccount($user): void
     {
         $avatarPath = $user->avatar;
-
-        // 1. Deleta o usuário do banco (isso também invalida os tokens do Sanctum)
         $user->delete();
 
-        // 2. Dispara o Job para limpar os arquivos no Redis
         if ($avatarPath) {
             \App\Jobs\DeleteUserResources::dispatch($avatarPath);
         }
