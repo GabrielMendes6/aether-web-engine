@@ -23,68 +23,57 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
     const { settings = {}, children = [] } = content;
     const [categories, setCategories] = useState([]);
 
-    const productSettings = activeSection.content.settings || {
+    const productSettings = {
         mode: settings.mode || 'random', // 'random' como padrão
         categoryId: settings.categoryId || null,
         limit: settings.limit || 8,
         ...settings
     };
-        
+
     const updateSettings = (newS) => {
-        // Se a mudança incluir 'mode', 'limit' ou 'categoryId', limpamos os produtos
-        const shouldReset = newS.mode || newS.limit || newS.categoryId;
-        
-        onUpdate({ 
-            ...content, 
-            produtos: shouldReset ? [] : (content.produtos || []), // Limpa se mudar regra
-            settings: { ...settings, ...newS } 
+        // Verifica se a mudança exige um "reset" de dados (troca de modo, limite ou categoria)
+        const shouldReset = 
+            (newS.mode && newS.mode !== productSettings.mode) || 
+            (newS.limit && newS.limit !== productSettings.limit) ||
+            (newS.categoryId !== undefined && newS.categoryId !== productSettings.categoryId);
+
+        onUpdate({
+            // Se mudou a regra, mandamos o array de produtos VAZIO
+            // Isso é o sinal para o ProductGrid chamar a API
+            produtos: shouldReset ? [] : (content.produtos || []),
+            settings: { 
+                ...productSettings, 
+                ...newS 
+            }
         });
     };
 
     const updateBlock = (index, data) => {
-        if (!data) return; // Segurança extra
-
         const newC = [...children];
         const item = { ...newC[index] };
 
-        // Adicionado 'listTag' e 'layout' aqui para serem globais
-        const contentProps = [
-            'url', 'value', 'rows', 'items', 'listTag', 'layout',
-            'placeholder', 'label', 'name', 
-            'actionType', 'destination', 'submitText'
-        ];
+        // Separamos o que é PROPS (texto, links, imagens) do que é GEOMETRIA
+        const propKeys = ['url', 'value', 'items', 'destination'];
         
-        const contentUpdates = {};
-        const geometricUpdates = {};
+        const newProps = { ...(item.props || {}) };
+        const newGeometry = {};
 
         Object.keys(data).forEach(key => {
-            if (contentProps.includes(key)) {
-                contentUpdates[key] = data[key];
+            if (propKeys.includes(key)) {
+                newProps[key] = data[key];
             } else {
-                geometricUpdates[key] = data[key];
+                newGeometry[key] = data[key];
             }
         });
 
-        const b = item.breakpoints || {
-            desktop: {
-                x: item.x || 0,
-                y: item.y || 0,
-                width: item.style?.width || '300px',
-                height: item.style?.height || 'auto',
-                fontSize: item.style?.fontSize || '16px',
-                textAlign: item.style?.textAlign || 'left' // Padrão
-            }
-        };
-
         newC[index] = {
             ...item,
-            ...contentUpdates,
-            style: data.style ? data.style : item.style,
+            props: newProps, // Agora o conteúdo vive aqui
             breakpoints: {
-                ...b,
+                ...item.breakpoints,
                 [currentBreakpoint]: {
-                    ...(b[currentBreakpoint] || b.desktop || {}),
-                    ...geometricUpdates 
+                    ...(item.breakpoints?.[currentBreakpoint] || {}),
+                    ...newGeometry 
                 }
             }
         };
@@ -493,7 +482,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                 </div>
                             );
                         })}
-                                                
+                        
                         {activeSection.component === 'ProductSection' && (
                             <div className="space-y-6 animate-in fade-in duration-500">
                                 <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
@@ -502,35 +491,39 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                     </h3>
                                 </div>
 
-                                {/* MODO DE EXIBIÇÃO */}
+                                {/* SELETOR DE MODO */}
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Como os produtos aparecem?</label>
-                                    <select 
-                                        value={productSettings.mode || 'manual'} 
-                                        onChange={(e) => {
-                                            const newMode = e.target.value;
-                                            updateSettings({ mode: newMode, categoryId: null });
-                                        }}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-[11px] font-bold outline-none focus:border-blue-400 appearance-none cursor-pointer pr-10"
-                                    >
-                                        <option value="manual">🎯 Seleção Manual</option>
-                                        <option value="random">🎲 Aleatórios</option>
-                                        <option value="category">📂 Por Categoria</option>
-                                    </select>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Como os produtos aparecem?</label>
+                                    <div className="relative">
+                                        <select 
+                                            value={productSettings.mode || 'manual'} 
+                                            onChange={(e) => updateSettings({ mode: e.target.value })}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-[11px] font-bold outline-none focus:border-blue-400 transition-all appearance-none cursor-pointer pr-10"
+                                        >
+                                            <option value="manual">🎯 Seleção Manual (Controle Total)</option>
+                                            <option value="random">🎲 Aleatórios (Auto-preenchimento)</option>
+                                            <option value="category">📂 Por Categoria (Sincronizado)</option>
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                            <Layout size={14} />
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* LIMITE (Oculto no Manual) */}
+                                {/* CONFIGURAÇÃO DE QUANTIDADE (Apenas para modos Automáticos) */}
                                 {productSettings.mode !== 'manual' && (
-                                    <div className="space-y-3 p-4 bg-blue-50/30 border border-blue-100 rounded-[24px]">
-                                        <div className="flex justify-between items-center">
-                                            <label className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Quantidade</label>
-                                            <span className="text-[10px] font-black text-blue-700 bg-white px-2 py-0.5 rounded-lg border border-blue-100">
+                                    <div className="space-y-3 p-4 bg-blue-50/30 border border-blue-100 rounded-[24px] animate-in slide-in-from-top-2">
+                                        <div className="flex justify-between items-center px-1">
+                                            <label className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Limite de Exibição</label>
+                                            <span className="text-[11px] font-black text-blue-700 bg-white px-2 py-0.5 rounded-lg shadow-sm border border-blue-100">
                                                 {productSettings.limit || 8} Itens
                                             </span>
                                         </div>
                                         <input 
                                             type="range"
-                                            min="1" max="24"
+                                            min="1"
+                                            max="20"
+                                            step="1"
                                             value={productSettings.limit || 8}
                                             onChange={(e) => updateSettings({ limit: parseInt(e.target.value) })}
                                             className="w-full h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -538,16 +531,21 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                     </div>
                                 )}
 
-                                {/* CATEGORIA */}
+                                {/* SELETOR DE CATEGORIA (Apenas se modo for Category) */}
                                 {productSettings.mode === 'category' && (
-                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-[24px] space-y-3">
-                                        <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Vincular Categoria</label>
+                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-[24px] space-y-3 animate-in zoom-in-95">
+                                        <label className="text-[9px] font-black text-slate-500 uppercase ml-1 flex items-center gap-2">
+                                            <Tag size={10} /> Vincular Categoria
+                                        </label>
                                         <select 
                                             value={productSettings.categoryId || ''}
-                                            onChange={(e) => updateSettings({ categoryId: e.target.value ? Number(e.target.value) : null })}
-                                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[10px] font-bold outline-none"
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                updateSettings({ categoryId: val ? Number(val) : null });
+                                            }}
+                                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[10px] font-bold outline-none focus:border-blue-400"
                                         >
-                                            <option value="">Selecione...</option>
+                                            <option value="">Selecione uma categoria...</option>
                                             {categories.map((cat) => (
                                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                                             ))}
@@ -555,14 +553,15 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                     </div>
                                 )}
 
-                                {/* DICA PARA O USUÁRIO */}
-                                <div className="p-4 bg-slate-900 rounded-[24px] text-white">
-                                    <p className="text-[9px] font-medium leading-relaxed opacity-80">
-                                        {productSettings.mode === 'manual' 
-                                            ? "No modo manual, os produtos são fixos e você escolhe cada um."
-                                            : "Nos modos automáticos, o sistema sugere produtos e os salva para garantir que a vitrine não mude sozinha para o cliente."}
-                                    </p>
-                                </div>
+                                {/* FEEDBACK PARA MODO MANUAL */}
+                                {productSettings.mode === 'manual' && (
+                                    <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-[24px] flex items-start gap-3">
+                                        <div className="mt-1"><MousePointer2 size={14} className="text-amber-600" /></div>
+                                        <p className="text-[10px] text-amber-800 font-bold leading-relaxed uppercase tracking-tighter">
+                                            Gerencie os produtos diretamente na vitrine clicando nos botões de <span className="text-amber-600">+</span> e <span className="text-red-500">X</span>.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
 

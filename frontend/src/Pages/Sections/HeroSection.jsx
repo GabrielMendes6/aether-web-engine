@@ -67,7 +67,7 @@ export default function HeroSection({ title: initialTitle, subtitle: initialSubt
                 {/* Badge Premium Animado */}
                 <div className="animate-pulse mb-2">
                     <span className="bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] px-5 py-2 rounded-full border border-blue-500/20 flex items-center gap-2 shadow-lg shadow-blue-500/10">
-                        <Sparkles size={12} className="text-blue-300" /> HERI AMOSTRA PRO
+                        <Sparkles size={12} className="text-blue-300" /> HERI AMOSTRA 
                     </span>
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useMatch } from 'react-router-dom';
 import api from '../Services/api';
 import PageRenderer from '../components/Admin/PageRenderer';
 import EditorSidebar from '../components/Admin/SideBar/EditorSidebar'; // Certifique-se do caminho correto
@@ -11,14 +11,15 @@ export default function GenericPage() {
     const { user, isAdmin } = useContext(AuthContext);
     const pageSlug = slug || 'home';
     const [currentBreakpoint, setCurrentBreakpoint] = useState('desktop');
+    const [editingIndex, setEditingIndex] = useState(null);
 
     const [sections, setSections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [hasChanges, setHasChanges] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    
-    // NOVO: Estado para saber qual seção estamos editando na Sidebar
-    const [editingIndex, setEditingIndex] = useState(null);
+    const isEditorMode = !!useMatch("/admin/editor/:slug");
+
+    console.log(isEditorMode); // true se estiver em /admin/editor/home
 
     const loadPageData = async () => {
         setLoading(true);
@@ -41,6 +42,18 @@ export default function GenericPage() {
             setCurrentBreakpoint('mobile');
         }
     });
+
+    // No GenericPage.jsx
+    const handleUpdateContent = (index, newContent) => {
+        // Usamos uma técnica funcional para evitar problemas de concorrência
+        setSections(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], content: newContent };
+            return updated;
+        });
+        
+        if (!hasChanges) setHasChanges(true);
+    };
 
     const handleReorder = (index, direction) => {
         const newSections = [...sections];
@@ -81,10 +94,11 @@ export default function GenericPage() {
                         setHasChanges(true);
                     }}
                     onReorder={handleReorder}
-                    onEditSection={(index) => setEditingIndex(index)} 
+                    editingIndex={editingIndex}
+                    onEditSection={(index) => setEditingIndex(index)}
                     currentBreakpoint={currentBreakpoint}
                     setCurrentBreakpoint={setCurrentBreakpoint}
-                    isAdmin={isAdmin}
+                    isAdmin={isAdmin && isEditorMode}
                     slug={pageSlug}
                 />
             </div>

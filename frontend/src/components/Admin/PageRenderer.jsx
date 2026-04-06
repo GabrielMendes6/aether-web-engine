@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../../Services/api';
-import { 
-    Plus, LayoutTemplate, X, MoveUp, MoveDown, 
-    Trash2, Settings, Monitor, Smartphone 
+import {
+    Plus, LayoutTemplate, X, MoveUp, MoveDown,
+    Trash2, Settings, Monitor, Smartphone
 } from 'lucide-react';
+
+// Importação dos Componentes Orquestradores (que decidem entre View/Editor internamente)
 import HeroSection from '../../Pages/Sections/HeroSection';
-import ProductGrid from '../../Pages/Sections/ProductGrid';
-import FlexSection from '../../Pages/Sections/FlexSection';
+import ProductGrid from '../../Pages/Sections/ProductGrid/index';
+import FlexSection from '../../Pages/Sections/FlexSection/index'; // Alterado para o index/orquestrador
 import CarouselBannerSection from '../../Pages/Sections/CarouselBannerSection';
 
 const COMPONENT_MAP = {
     'HeroSection': HeroSection,
-    'ProductSection': ProductGrid,
-    'FlexSection': FlexSection,
+    'ProductGrid': ProductGrid,
+    'FlexSection': FlexSection, // Agora mapeia para o componente inteligente
     'CarrosselBanner': CarouselBannerSection
-}
+};
 
 const AVAILABLE_COMPONENTS = [
     {
@@ -26,14 +29,14 @@ const AVAILABLE_COMPONENTS = [
         }
     },
     { name: 'HeroSection', label: 'Banner Principal', defaultContent: { title: 'Novo Titulo', subtitle: 'Subtítulo aqui', cta_text: 'Saiba Mais' } },
-    { 
-        name: 'ProductSection', 
-        label: 'Grade de Produtos', 
-        defaultContent: { 
+    {
+        name: 'ProductGrid',
+        label: 'Grade de Produtos',
+        defaultContent: {
             title: 'Nossos Produtos',
             style: { gap: '24px', columns: 4, titleColor: '#1e293b' },
-            produtos: [] 
-        } 
+            produtos: []
+        }
     },
     {
         name: 'CarrosselBanner',
@@ -41,23 +44,29 @@ const AVAILABLE_COMPONENTS = [
         defaultContent: {
             settings: { autoplay: true, delay: 4000, showArrows: true },
             slides: [
-                { 
-                    image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200', 
-                    title: 'PROMOÇÃO DE VERÃO', 
+                {
+                    image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200',
+                    title: 'PROMOÇÃO DE VERÃO',
                     cta: 'Comprar Agora',
-                    link: '#' 
+                    link: '#'
                 }
             ]
         }
     },
 ]
 
-export default function PageRenderer({ sections = [], setSections, onReorder, onEditSection, currentBreakpoint, setCurrentBreakpoint, slug, isAdmin }) {
+
+export default function PageRenderer({ sections = [], setSections, onReorder, onEditSection, currentBreakpoint, setCurrentBreakpoint, slug, isAdmin, editingIndex }) {
+    const location = useLocation();
     const [showModal, setShowModal] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
-    
+
+    const showAdminTools = isAdmin && typeof onEditSection === 'function';
+
     const isMobileView = currentBreakpoint === 'mobile';
-    const showDeviceFrame = isMobileView && isAdmin;
+    const showDeviceFrame = isMobileView && showAdminTools;
+
+    console.log(showAdminTools)
 
     const handleCreateSection = async (comp) => {
         setIsCreating(true);
@@ -91,18 +100,18 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
     }
 
     return (
-        <div className={`flex flex-col items-center w-full min-h-screen transition-all duration-500 ${isAdmin ? 'bg-slate-50/50 pb-40' : 'bg-white'}`}>
-            
-            {/* TOOLBAR DE DISPOSITIVOS - CENTRALIZAÇÃO FIXA REAL */}
-            {isAdmin && (
-                <div className="fixed top-6 left-59/101 -translate-x-1/2 z-[10000] flex bg-white/95 backdrop-blur-md border border-slate-200 p-1.5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
-                    <button 
+        <div className={`flex flex-col items-center w-full min-h-screen transition-all duration-500 ${showAdminTools ? 'bg-slate-50/50 pb-40' : 'bg-white'}`}>
+
+            {/* TOOLBAR DE DISPOSITIVOS: Só aparece no modo editor */}
+            {showAdminTools && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[10000] flex bg-white/95 backdrop-blur-md border border-slate-200 p-1.5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
+                    <button
                         onClick={() => setCurrentBreakpoint('desktop')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${currentBreakpoint === 'desktop' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
                     >
                         <Monitor size={16} /> Desktop
                     </button>
-                    <button 
+                    <button
                         onClick={() => setCurrentBreakpoint('mobile')}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${currentBreakpoint === 'mobile' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
                     >
@@ -111,27 +120,28 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                 </div>
             )}
 
-            {/* ÁREA DE RENDERIZAÇÃO: MOLDURA E CONTEÚDO */}
-            <div className={`w-full flex flex-col items-center ${isAdmin ? 'pt-28': ''} transition-all duration-700`}>
-                <div className={`transition-all duration-700 ease-in-out relative bg-white ${
-                    showDeviceFrame 
-                    ? 'w-[430px] border-[12px] border-slate-950 rounded-[60px] shadow-[0_0_100px_rgba(0,0,0,0.2)] h-[844px] overflow-y-auto overflow-x-hidden scrollbar-hide box-content' 
-                    : 'w-full max-w-none border-none rounded-none'
-                }`}>
-                    
-                    {/* Notch do iPhone (Apenas Admin + Mobile) */}
+            {/* CONTAINER PRINCIPAL */}
+            <div className={`w-full flex flex-col items-center ${showAdminTools ? 'pt-28' : ''} transition-all duration-700`}>
+                <div className={`transition-all duration-700 ease-in-out relative bg-white ${showDeviceFrame
+                        ? 'w-[430px] border-[12px] border-slate-950 rounded-[60px] shadow-[0_0_100px_rgba(0,0,0,0.2)] h-[844px] overflow-y-auto overflow-x-hidden scrollbar-hide box-content'
+                        : 'w-full max-w-none border-none rounded-none'
+                    }`}>
+
                     {showDeviceFrame && (
-                        <div className="sticky top-0 left-7/10 -translate-x-1/2 w-36 h-7 bg-slate-950 rounded-b-3xl z-[2000] mb-[-28px]" />
+                        <div className="sticky top-0 left-1/2 -translate-x-1/2 w-36 h-7 bg-slate-950 rounded-b-3xl z-[2000] mb-[-28px]" />
                     )}
 
                     <div className="w-full min-h-full">
                         {sections.map((section, index) => {
                             const Component = COMPONENT_MAP[section.component];
                             if (!Component) return null;
+                            console.log(section.id)
 
                             return (
                                 <div key={`${section.id}-${index}`} className="relative group/section">
-                                    {isAdmin && (
+
+                                    {/* CONTROLES FLUTUANTES: Aparecem no hover apenas se não estiver editando a seção */}
+                                    {showAdminTools && (
                                         <div className="absolute top-4 right-6 z-[1000] flex items-center gap-2 opacity-0 group-hover/section:opacity-100 transition-all duration-300 transform translate-y-2 group-hover/section:translate-y-0">
                                             <div className="flex bg-slate-900/90 shadow-2xl border border-slate-700/50 rounded-2xl p-1.5 backdrop-blur-md">
                                                 <button
@@ -162,19 +172,6 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                                                 };
                                                 setSections(updatedSections);
                                             }}
-
-                                            updateSettings={(newSettings) => {
-                                                setSections(prev => prev.map((s, i) => {
-                                                    if (i !== index) return s;
-                                                    return {
-                                                        ...s,
-                                                        content: {
-                                                            ...s.content,
-                                                            settings: { ...(s.content.settings || {}), ...newSettings }
-                                                        }
-                                                    };
-                                                }));
-                                            }}
                                         />
                                     </section>
                                 </div>
@@ -183,8 +180,8 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                     </div>
                 </div>
 
-                {/* BOTÃO ADICIONAR SEÇÃO - SINCRONIZADO COM A LARGURA DA MOLDURA */}
-                {isAdmin && (
+                {/* BOTÃO ADICIONAR */}
+                {showAdminTools && (
                     <div className={`mt-16 px-6 transition-all duration-700 ${showDeviceFrame ? 'w-[430px]' : 'w-full max-w-4xl'}`}>
                         <button
                             onClick={() => setShowModal(true)}
@@ -206,7 +203,7 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                         <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                             <h3 className="text-xl font-black text-slate-800 flex items-center gap-3 italic uppercase tracking-tighter">
                                 <LayoutTemplate className="text-blue-600" size={24} />
-                                Luci Builder
+                                Builder
                             </h3>
                             <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
                                 <X size={20} />

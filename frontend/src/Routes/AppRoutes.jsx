@@ -6,7 +6,6 @@ import { AuthContext } from '../Context/AuthProvider';
 import Login from '../Pages/Auth/Login';
 import SignUp from '../Pages/Auth/SignUp';
 import Dashboard from '../Pages/Dashboard';
-import Home from '../Pages/Home';
 import AdminLayout from '../Pages/Admin/Layout';
 import EditBox from '../Pages/Admin/EditBox';
 import GenericPage from '../Pages/GenericPage';
@@ -62,8 +61,9 @@ export default function AppRoutes() {
                 
                 {/* Rota dinâmica para qualquer outra página: /about, /contato, /servicos */}
                 <Route path="/:slug" element={<GenericPage />} />
+                
 
-                {/* Rota Privada: Só entra se tiver Token do Laravel */}
+                {/* Rota Privada: Usuarios Autenticados */}
                 <Route
                     path="/dashboard"
                     element={
@@ -72,7 +72,18 @@ export default function AppRoutes() {
                         </PrivateRoute>
                     }
                 />
+
                 {/* Rota Administrativa */}
+
+                <Route
+                    path='/admin/editor/:slug'
+                    element={
+                        <PrivateRoute>
+                            <GenericPage />
+                        </PrivateRoute>
+                    }
+                />
+
                 <Route
                     path='/Layout'
                     element={

@@ -1,59 +1,64 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📦 SystemBox: Sistema de Autogestão e Catálogo Digital
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+O **SystemBox** é uma plataforma de e-commerce e gerenciamento de conteúdo (CMS) de alto desempenho, desenvolvida para transformar empreendedores informais em negócios digitais profissionais. O projeto permite a criação de vitrines dinâmicas e personalizadas através de uma interface **No-Code**, eliminando a dependência técnica para ajustes de design e catálogo.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Diferenciais do Projeto
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+* **Arquitetura Híbrida:** Backend robusto em Laravel (PHP 8+) e Frontend reativo em React.js.
+* **Editor No-Code (Page Builder):** Sistema de blocos flexíveis (`FlexSections`) que permite arrastar, soltar e personalizar componentes em tempo real.
+* **Persistência via JSON Schemas:** Layouts complexos salvos em estruturas JSON dinâmicas, permitindo flexibilidade total de design sem a necessidade de alterar o esquema do banco de dados a cada novo componente.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🛠️ Stack Técnica
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### **Backend**
+* **Framework:** Laravel 10/11
+* **Linguagem:** PHP 8.x
+* **Banco de Dados:** MySQL
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### **Frontend**
+* **Biblioteca:** React.js
+* **Estilização:** Tailwind CSS (Classes dinâmicas e utilitárias).
+* **Componentes de UI:** Lucide React (Ícones) e React-Rnd (Drag, Drop & Resize).
+* **Gerenciamento de Estado:** React Hooks (`useState`, `useEffect`, `useMemo`).
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 📖 Estrutura do Sistema
 
-### Premium Partners
+### 1. Vitrine (Página do Cliente)
+Interface focada em conversão e performance, totalmente responsiva.
+* **Hero Sections:** Banners de alto impacto com chamadas para ação (CTA).
+* **Grids de Produtos:** Exposição inteligente com suporte a busca automática (por categoria/limite) ou seleção manual de IDs.
+* **Navegação Mobile-First:** Otimizada para uma experiência fluida em smartphones.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 2. Painel Administrativo (Modo Edição)
+Um ambiente de design intuitivo para o empreendedor gerir sua marca:
+* **Sidebar Dinâmica:** Controle total sobre tipografia, cores, arredondamento de bordas e espaçamentos (gaps).
+* **Live Preview:** Alternância de *breakpoints* para simular Desktop, Tablet e Mobile instantaneamente.
+* **Gestão de Inventário:** Cadastro de produtos com lógica de preços promocionais e controle de status (Ativo/Inativo).
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ⚙️ Fluxo de Renderização Dinâmica
 
-## Code of Conduct
+O sistema utiliza um fluxo de **Hidratação de Componentes**:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1.  O Frontend identifica o **Slug** da URL e solicita os dados à API.
+2.  O Backend recupera o objeto **JSON** estruturado do banco de dados.
+3.  O React percorre este JSON e mapeia cada `type` (ex: `ProductGrid`, `HeroSection`) para seu componente correspondente, injetando as propriedades de estilo e conteúdo em tempo real.
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```json
+{
+  "type": "ProductGrid",
+  "title": "Nossos Boxes Exclusivos",
+  "style": {
+    "columns": 4,
+    "gap": "24px",
+    "titleColor": "#1e293b"
+  },
+  "produtos": []
+}
