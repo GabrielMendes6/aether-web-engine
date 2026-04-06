@@ -1,64 +1,66 @@
 # 📦 SystemBox: Sistema de Autogestão e Catálogo Digital
 
-O **SystemBox** é uma plataforma de e-commerce e gerenciamento de conteúdo (CMS) de alto desempenho, desenvolvida para transformar empreendedores informais em negócios digitais profissionais. O projeto permite a criação de vitrines dinâmicas e personalizadas através de uma interface **No-Code**, eliminando a dependência técnica para ajustes de design e catálogo.
+O **SystemBox** é uma plataforma de Gerenciamento de Conteúdo (CMS) e Catálogo Digital de alta performance, desenvolvida para transformar pequenos empreendedores em negócios digitais profissionais. Através de uma interface **No-Code**, o sistema permite que o usuário gerencie sua vitrine e produtos com total autonomia, sem a necessidade de conhecimento técnico em programação.
 
 ---
 
-## 🚀 Diferenciais do Projeto
+## 🚀 Diferenciais Técnicos
 
-* **Arquitetura Híbrida:** Backend robusto em Laravel (PHP 8+) e Frontend reativo em React.js.
-* **Editor No-Code (Page Builder):** Sistema de blocos flexíveis (`FlexSections`) que permite arrastar, soltar e personalizar componentes em tempo real.
-* **Persistência via JSON Schemas:** Layouts complexos salvos em estruturas JSON dinâmicas, permitindo flexibilidade total de design sem a necessidade de alterar o esquema do banco de dados a cada novo componente.
+### 🏗️ Infraestrutura Moderna (Docker & Redis)
+O projeto foi concebido para ser escalável e fácil de distribuir:
+* **Docker & Docker Compose:** Todo o ambiente (Aplicação, Banco de Dados e Cache) é conteinerizado, garantindo que o sistema rode de forma idêntica em qualquer servidor.
+* **Redis Cache:** Utilizado para armazenar as estruturas das páginas e sessões em memória, garantindo um carregamento de página ultra-rápido para o cliente final e reduzindo a carga no banco de dados MySQL.
 
----
+### 🎨 Editor No-Code (Page Builder)
+Diferente de catálogos estáticos, o SystemBox oferece um editor visual em tempo real:
+* **FlexSection Architecture:** Sistema de blocos arrastáveis e redimensionáveis.
+* **Live Preview:** O administrador visualiza as alterações de cores, gaps, arredondamentos e tipografia instantaneamente antes de salvar.
+* **Responsividade Nativa:** Toggle de visualização para Mobile, Tablet e Desktop integrado ao editor.
 
-## 🛠️ Stack Técnica
-
-### **Backend**
-* **Framework:** Laravel 10/11
-* **Linguagem:** PHP 8.x
-* **Banco de Dados:** MySQL
-
-### **Frontend**
-* **Biblioteca:** React.js
-* **Estilização:** Tailwind CSS (Classes dinâmicas e utilitárias).
-* **Componentes de UI:** Lucide React (Ícones) e React-Rnd (Drag, Drop & Resize).
-* **Gerenciamento de Estado:** React Hooks (`useState`, `useEffect`, `useMemo`).
+### 🔐 Segurança e Performance
+* **Sanitização de Dados:** Implementação de *Traits* no Laravel que limpam automaticamente qualquer entrada de texto, protegendo o sistema contra ataques de XSS (Cross-Site Scripting).
+* **JSON Schemas:** A "receita" de cada página é salva em formato JSON dinâmico, permitindo flexibilidade total de layout sem alterações estruturais no banco de dados.
 
 ---
 
-## 📖 Estrutura do Sistema
+## 🛠️ Stack Tecnológica
 
-### 1. Vitrine (Página do Cliente)
-Interface focada em conversão e performance, totalmente responsiva.
-* **Hero Sections:** Banners de alto impacto com chamadas para ação (CTA).
-* **Grids de Produtos:** Exposição inteligente com suporte a busca automática (por categoria/limite) ou seleção manual de IDs.
-* **Navegação Mobile-First:** Otimizada para uma experiência fluida em smartphones.
-
-### 2. Painel Administrativo (Modo Edição)
-Um ambiente de design intuitivo para o empreendedor gerir sua marca:
-* **Sidebar Dinâmica:** Controle total sobre tipografia, cores, arredondamento de bordas e espaçamentos (gaps).
-* **Live Preview:** Alternância de *breakpoints* para simular Desktop, Tablet e Mobile instantaneamente.
-* **Gestão de Inventário:** Cadastro de produtos com lógica de preços promocionais e controle de status (Ativo/Inativo).
+* **Backend:** Laravel 10/11 (PHP 8.x)
+* **Frontend:** React.js + Tailwind CSS
+* **Banco de Dados:** MySQL 8
+* **Cache/Sessão:** Redis
+* **Containerização:** Docker & Docker Compose
+* **UI/UX:** Lucide React (Ícones) & React-Rnd (Drag & Resize)
 
 ---
 
-## ⚙️ Fluxo de Renderização Dinâmica
+## 📖 Estrutura de Rotas
 
-O sistema utiliza um fluxo de **Hidratação de Componentes**:
+O sistema separa estritamente o ambiente de consumo do ambiente de gestão para garantir performance e segurança:
 
-1.  O Frontend identifica o **Slug** da URL e solicita os dados à API.
-2.  O Backend recupera o objeto **JSON** estruturado do banco de dados.
-3.  O React percorre este JSON e mapeia cada `type` (ex: `ProductGrid`, `HeroSection`) para seu componente correspondente, injetando as propriedades de estilo e conteúdo em tempo real.
+* **Página Principal (`/home`):** Interface de visualização do cliente. Otimizada para SEO e velocidade, consumindo dados preferencialmente do cache.
+* **Modo Edição (`admin/editor/home`):** Rota protegida por autenticação. Apenas administradores acessam as ferramentas de manipulação de componentes e salvamento de configurações.
 
-```json
-{
-  "type": "ProductGrid",
-  "title": "Nossos Boxes Exclusivos",
-  "style": {
-    "columns": 4,
-    "gap": "24px",
-    "titleColor": "#1e293b"
-  },
-  "produtos": []
-}
+---
+
+## ⚙️ Fluxo de Funcionamento
+
+1.  **Requisição:** O cliente acessa a URL.
+2.  **Cache Check:** O Laravel verifica no **Redis** se a estrutura daquela página já está processada.
+3.  **Hidratação:** O React recebe o JSON de configuração e "monta" os componentes dinamicamente na tela.
+4.  **Sincronização:** O componente `ProductGrid` identifica se deve buscar produtos automaticamente (por categoria) ou exibir uma lista manual selecionada pelo admin.
+
+---
+
+## 👥 Público-Alvo e Contexto
+
+Este projeto foi desenvolvido como parte do **Hands On Work V** para atender ao empreendimento de **Hericksson Djeimer (Brusque-SC)**. O foco inicial é o mercado de **Box de Presentes**, provendo uma base tecnológica sólida para que o negócio inicie suas operações de forma profissional e escalável.
+
+---
+
+## 👨‍💻 Desenvolvedor
+* **Gabriel Mendes Gonçalves**
+* Projeto de Extensão - UNINTER 2026.1
+* Foco em Engenharia de Software e Soluções SaaS.
+
+---
