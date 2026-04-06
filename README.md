@@ -60,7 +60,5 @@ Este projeto foi desenvolvido como parte do **Hands On Work V** para atender ao 
 
 ## 👨‍💻 Desenvolvedor
 * **Gabriel Mendes Gonçalves**
-* Projeto de Extensão - UNINTER 2026.1
-* Foco em Engenharia de Software e Soluções SaaS.
-
+* Projeto de Extensão - UNIVALI 2026.1
 ---
