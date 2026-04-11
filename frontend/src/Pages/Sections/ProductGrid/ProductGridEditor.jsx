@@ -8,7 +8,7 @@ import 'swiper/css/pagination';
 
 import ProdutoItem from '../../../components/ProdutoItem';
 
-export default function ProductGridEditor({ title, style, allProducts, updateContent, isAdmin }) {
+export default function ProductGridEditor({ title, style, children = [], allProducts, updateContent, isAdmin }) {
     
     const swiperOptions = {
         // No editor, usamos Navigation para facilitar a troca de slides sem arrastar
@@ -27,12 +27,13 @@ export default function ProductGridEditor({ title, style, allProducts, updateCon
         touchStartPreventDefault: false,
     };
 
+    console.log(children    )
+
     return (
         /* Replicamos a classe 'product-grid-section' para herdar os mesmos estilos da View */
         <section className="w-full py-12 p-4 border-2 border-dashed border-blue-200 rounded-[2rem] bg-slate-50/50 product-grid-section relative">
             <style>
                 {`
-                    /* Sincronizado exatamente com sua View */
                     .product-grid-section .swiper {
                         width: 100%;
                         overflow: hidden !important; 
@@ -40,7 +41,7 @@ export default function ProductGridEditor({ title, style, allProducts, updateCon
                     }
 
                     .product-grid-section .swiper-wrapper {
-                        display: flex !important;
+                        display: flex !important;   
                     }
 
                     .product-grid-section .swiper-slide {
@@ -48,8 +49,6 @@ export default function ProductGridEditor({ title, style, allProducts, updateCon
                         display: flex;
                         justify-content: center;
                     }
-
-                    /* Estilo das setas para o Editor (para não sumirem no fundo cinza) */
                     .product-grid-section .swiper-button-next, 
                     .product-grid-section .swiper-button-prev {
                         color: #2563eb !important;

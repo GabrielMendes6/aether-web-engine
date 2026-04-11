@@ -16,12 +16,14 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
     | FLEX SECTION
     |--------------------------------------------------------------------------
     */
-   if (!activeSection || !activeSection.content) return null;
+    if (!activeSection || !activeSection.content) return null;
     const [isUploading, setIsUploading] = useState(false);
-    const [activeTab, setActiveTab] = useState('elements'); // 'elements' ou 'style'
+    const [activeTab, setActiveTab] = useState('stylew'); // 'elements' ou 'style'
     const { content } = activeSection;
     const { settings = {}, children = [] } = content;
     const [categories, setCategories] = useState([]);
+
+    console.log(activeSection);
 
     const productSettings = {
         mode: settings.mode || 'random', // 'random' como padrão
@@ -32,8 +34,8 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
     const updateSettings = (newS) => {
         // Verifica se a mudança exige um "reset" de dados (troca de modo, limite ou categoria)
-        const shouldReset = 
-            (newS.mode && newS.mode !== productSettings.mode) || 
+        const shouldReset =
+            (newS.mode && newS.mode !== productSettings.mode) ||
             (newS.limit && newS.limit !== productSettings.limit) ||
             (newS.categoryId !== undefined && newS.categoryId !== productSettings.categoryId);
 
@@ -41,9 +43,9 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
             // Se mudou a regra, mandamos o array de produtos VAZIO
             // Isso é o sinal para o ProductGrid chamar a API
             produtos: shouldReset ? [] : (content.produtos || []),
-            settings: { 
-                ...productSettings, 
-                ...newS 
+            settings: {
+                ...productSettings,
+                ...newS
             }
         });
     };
@@ -54,7 +56,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
         // Separamos o que é PROPS (texto, links, imagens) do que é GEOMETRIA
         const propKeys = ['url', 'value', 'items', 'destination'];
-        
+
         const newProps = { ...(item.props || {}) };
         const newGeometry = {};
 
@@ -73,7 +75,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                 ...item.breakpoints,
                 [currentBreakpoint]: {
                     ...(item.breakpoints?.[currentBreakpoint] || {}),
-                    ...newGeometry 
+                    ...newGeometry
                 }
             }
         };
@@ -128,9 +130,9 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
     */
 
     const addCarouselSlide = () => {
-        const newSlide = { 
-            image: 'https://via.placeholder.com/1200x500', 
-            link: '#' 
+        const newSlide = {
+            image: 'https://via.placeholder.com/1200x500',
+            link: '#'
         };
         const currentSlides = activeSection.content.slides || [];
         onUpdate({ ...activeSection.content, slides: [...currentSlides, newSlide] });
@@ -154,7 +156,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
         const formData = new FormData();
         // Verifique se o backend espera 'file' ou 'image' no append
-        formData.append('file', file); 
+        formData.append('file', file);
 
         try {
             const response = await api.post('/api/sections/uploadFiles', formData, {
@@ -203,7 +205,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
         fetchCategories();
     }, []);
-    
+
     return (
         <aside className="fixed right-0 top-0 h-full w-[400px] bg-white shadow-[-20px_0_80px_rgba(0,0,0,0.15)] z-[99999] border-l border-slate-100 flex flex-col animate-in slide-in-from-right duration-500 ease-out font-sans">
 
@@ -271,9 +273,9 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                     ) : settings.backgroundImage ? (
                                         <div className="absolute inset-0 group">
                                             <img src={settings.backgroundImage} className="w-full h-full object-cover" alt="Background" />
-                                            
+
                                             {/* BOTÃO PARA REMOVER IMAGEM */}
-                                            <button 
+                                            <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     updateSettings({ backgroundImage: null });
@@ -287,21 +289,21 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                             <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                                                 <UploadCloud className="text-white" size={24} />
                                                 {/* Input para trocar a imagem atual */}
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*" 
-                                                    onChange={(e) => handleFileUpload(null, e.target.files[0], true)} 
-                                                    className="absolute inset-0 opacity-0 cursor-pointer z-20" 
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleFileUpload(null, e.target.files[0], true)}
+                                                    className="absolute inset-0 opacity-0 cursor-pointer z-20"
                                                 />
                                             </div>
                                         </div>
                                     ) : (
                                         <>
-                                            <input 
-                                                type="file" 
-                                                accept="image/*" 
-                                                onChange={(e) => handleFileUpload(null, e.target.files[0], true)} 
-                                                className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleFileUpload(null, e.target.files[0], true)}
+                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             />
                                             <UploadCloud className="text-slate-300" size={24} />
                                             <span className="text-[8px] font-black text-slate-400 mt-2 uppercase">Subir Imagem</span>
@@ -309,6 +311,88 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                     )}
                                 </div>
                             </div>
+
+                            {activeSection.component === 'ProductSection' && (
+                                <div className="space-y-6 animate-in fade-in duration-500">
+                                    <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
+                                        <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
+                                            Inteligência da Vitrine
+                                        </h3>
+                                    </div>
+
+                                    {/* SELETOR DE MODO */}
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Como os produtos aparecem?</label>
+                                        <div className="relative">
+                                            <select
+                                                value={productSettings.mode || 'manual'}
+                                                onChange={(e) => updateSettings({ mode: e.target.value })}
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-[11px] font-bold outline-none focus:border-blue-400 transition-all appearance-none cursor-pointer pr-10"
+                                            >
+                                                <option value="manual">🎯 Seleção Manual (Controle Total)</option>
+                                                <option value="random">🎲 Aleatórios (Auto-preenchimento)</option>
+                                                <option value="category">📂 Por Categoria (Sincronizado)</option>
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                <Layout size={14} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* CONFIGURAÇÃO DE QUANTIDADE (Apenas para modos Automáticos) */}
+                                    {productSettings.mode !== 'manual' && (
+                                        <div className="space-y-3 p-4 bg-blue-50/30 border border-blue-100 rounded-[24px] animate-in slide-in-from-top-2">
+                                            <div className="flex justify-between items-center px-1">
+                                                <label className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Limite de Exibição</label>
+                                                <span className="text-[11px] font-black text-blue-700 bg-white px-2 py-0.5 rounded-lg shadow-sm border border-blue-100">
+                                                    {productSettings.limit || 8} Itens
+                                                </span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="20"
+                                                step="1"
+                                                value={productSettings.limit || 8}
+                                                onChange={(e) => updateSettings({ limit: parseInt(e.target.value) })}
+                                                className="w-full h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* SELETOR DE CATEGORIA (Apenas se modo for Category) */}
+                                    {productSettings.mode === 'category' && (
+                                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-[24px] space-y-3 animate-in zoom-in-95">
+                                            <label className="text-[9px] font-black text-slate-500 uppercase ml-1 flex items-center gap-2">
+                                                <Tag size={10} /> Vincular Categoria
+                                            </label>
+                                            <select
+                                                value={productSettings.categoryId || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    updateSettings({ categoryId: val ? Number(val) : null });
+                                                }}
+                                                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[10px] font-bold outline-none focus:border-blue-400"
+                                            >
+                                                <option value="">Selecione uma categoria...</option>
+                                                {categories.map((cat) => (
+                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {/* FEEDBACK PARA MODO MANUAL */}
+                                    {productSettings.mode === 'manual' && (
+                                        <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-[24px] flex items-start gap-3">
+                                            <div className="mt-1"><MousePointer2 size={14} className="text-amber-600" /></div>
+                                            <p className="text-[10px] text-amber-800 font-bold leading-relaxed uppercase tracking-tighter">
+                                                Gerencie os produtos diretamente na vitrine clicando nos botões de <span className="text-amber-600">+</span> e <span className="text-red-500">X</span>.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -320,7 +404,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                             <div className="space-y-6 ">
                                 <div className="flex items-center justify-between border-l-4 border-blue-600 pl-3">
                                     <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Gerenciar Banners</h3>
-                                    <button 
+                                    <button
                                         onClick={addCarouselSlide}
                                         className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2 text-[10px] font-black uppercase"
                                     >
@@ -335,7 +419,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                                 {sIdx + 1}
                                             </div>
                                             {/* Mover para Cima */}
-                                            <button 
+                                            <button
                                                 onClick={() => moveCarouselSlide(sIdx, 'up')}
                                                 disabled={sIdx === 0}
                                                 className="w-7 h-7 bg-white text-slate-600 rounded-full shadow-md flex items-center justify-center border border-slate-100 hover:bg-blue-50 disabled:opacity-30"
@@ -344,7 +428,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                             </button>
 
                                             {/* Mover para Baixo */}
-                                            <button 
+                                            <button
                                                 onClick={() => moveCarouselSlide(sIdx, 'down')}
                                                 disabled={sIdx === (activeSection.content.slides.length - 1)}
                                                 className="w-7 h-7 bg-white text-slate-600 rounded-full shadow-md flex items-center justify-center border border-slate-100 hover:bg-blue-50 disabled:opacity-30"
@@ -353,7 +437,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                             </button>
 
                                             {/* Deletar */}
-                                            <button 
+                                            <button
                                                 onClick={() => removeCarouselSlide(sIdx)}
                                                 className="w-7 h-7 bg-white text-red-500 rounded-full shadow-md flex items-center justify-center border border-slate-100 hover:bg-red-50"
                                             >
@@ -366,8 +450,8 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                             <img src={slide.image} className="w-full h-full object-cover" alt="" />
                                             <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center transition-all cursor-pointer">
                                                 <UploadCloud className="text-white mb-1" size={20} />
-                                                <input 
-                                                    type="file" 
+                                                <input
+                                                    type="file"
                                                     accept="image/*"
                                                     onChange={(e) => {
                                                         const file = e.target.files[0];
@@ -375,19 +459,19 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                                             carrosselFileUpload(sIdx, file); // sIdx vem do map
                                                         }
                                                     }}
-                                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                    className="absolute inset-0 opacity-0 cursor-pointer"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Inputs de Conteúdo */}
                                         <div className="space-y-2">
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 placeholder="Link"
-                                                value={slide.link || ''} 
+                                                value={slide.link || ''}
                                                 onChange={(e) => updateCarouselSlide(sIdx, { link: e.target.value })}
-                                                className="w-full h-9 bg-white border border-slate-200 rounded-xl px-3 text-[10px] font-bold outline-none" 
+                                                className="w-full h-9 bg-white border border-slate-200 rounded-xl px-3 text-[10px] font-bold outline-none"
                                             />
                                         </div>
                                     </div>
@@ -439,41 +523,41 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
                                     {/* MÓDULO DE TEXTO / BOTÃO */}
                                     {(block.type === 'text' || block.type === 'button') && (
-                                        <RenderTypographySection 
-                                            block={block} 
-                                            idx={idx} 
+                                        <RenderTypographySection
+                                            block={block}
+                                            idx={idx}
                                             config={config}
-                                            updateBlockStyle={updateBlockStyle} 
+                                            updateBlockStyle={updateBlockStyle}
                                             updateBlock={updateBlock}
                                         />
                                     )}
 
                                     {/* MÓDULO DE IMAGEM */}
                                     {block.type === 'image' && (
-                                        <RenderImageSection 
-                                            block={block} 
-                                            idx={idx} 
-                                            handleFileUpload={handleFileUpload} 
-                                            updateBlockStyle={updateBlockStyle} 
-                                            updateBlock={updateBlock} 
+                                        <RenderImageSection
+                                            block={block}
+                                            idx={idx}
+                                            handleFileUpload={handleFileUpload}
+                                            updateBlockStyle={updateBlockStyle}
+                                            updateBlock={updateBlock}
                                         />
                                     )}
 
                                     {/* SEÇÃO DE LINK */}
                                     {block.type === 'link' && (
-                                        <RenderLinkSection 
-                                            block={block} 
-                                            idx={idx} 
-                                            updateBlock={updateBlock} 
+                                        <RenderLinkSection
+                                            block={block}
+                                            idx={idx}
+                                            updateBlock={updateBlock}
                                         />
                                     )}
 
                                     {/* SEÇÃO DE LISTA */}
                                     {block.type === 'list' && (
-                                        <ListSection 
-                                            block={block} 
-                                            idx={idx} 
-                                            updateBlock={updateBlock} 
+                                        <ListSection
+                                            block={block}
+                                            idx={idx}
+                                            updateBlock={updateBlock}
                                             updateBlockStyle={updateBlockStyle}
                                             currentBreakpoint={currentBreakpoint}
                                         />
@@ -481,89 +565,95 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                 </div>
                             );
                         })}
-                        
-                        {activeSection.component === 'ProductSection' && (
-                            <div className="space-y-6 animate-in fade-in duration-500">
-                                <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
-                                    <h3 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
-                                        Inteligência da Vitrine
-                                    </h3>
-                                </div>
 
-                                {/* SELETOR DE MODO */}
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-tighter">Como os produtos aparecem?</label>
-                                    <div className="relative">
-                                        <select 
-                                            value={productSettings.mode || 'manual'} 
-                                            onChange={(e) => updateSettings({ mode: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-[11px] font-bold outline-none focus:border-blue-400 transition-all appearance-none cursor-pointer pr-10"
-                                        >
-                                            <option value="manual">🎯 Seleção Manual (Controle Total)</option>
-                                            <option value="random">🎲 Aleatórios (Auto-preenchimento)</option>
-                                            <option value="category">📂 Por Categoria (Sincronizado)</option>
-                                        </select>
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <Layout size={14} />
+                        {activeSection.component === 'ProductSection' && children.map((block, idx) => {
+                            const config = block.breakpoints?.[currentBreakpoint] || block.breakpoints?.desktop || {
+                                x: block.x || 0,
+                                y: block.y || 0,
+                                width: block.style?.width || '300px'
+                            };
+
+                            console.log(block);
+
+                            return (
+                                <div key={idx} className="group/block bg-white border border-slate-100 rounded-[32px] p-6 space-y-6 transition-all hover:shadow-2xl hover:shadow-slate-200/50 border-t-4 border-t-blue-500/10">
+
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-[11px] shadow-lg shadow-slate-900/20">{idx + 1}</div>
+                                            <span className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">{block.type}</span>
+                                        </div>
+                                        <button onClick={() => onUpdate({ ...content, children: children.filter((_, i) => i !== idx) })} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                                    </div>
+
+                                    {/* MÓDULO DE GEOMETRIA (POR BREAKPOINT) */}
+                                    <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-2"><Move size={12} /> Posicionamento ({currentBreakpoint})</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1 text-left">
+                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Eixo X</span>
+                                                <input type="number" value={Math.round(config.x)} onChange={(e) => updateBlock(idx, { x: parseInt(e.target.value) })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
+                                            </div>
+                                            <div className="space-y-1 text-left">
+                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Eixo Y</span>
+                                                <input type="number" value={Math.round(config.y)} onChange={(e) => updateBlock(idx, { y: parseInt(e.target.value) })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
+                                            </div>
+                                            <div className="space-y-1 text-left">
+                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Largura</span>
+                                                <input type="text" value={config.width} onChange={(e) => updateBlockStyle(idx, { width: e.target.value })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
+                                            </div>
+                                            <div className="space-y-1 text-left">
+                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Z-Index</span>
+                                                <input type="number" value={block.zIndex || 1} onChange={(e) => updateBlock(idx, { zIndex: parseInt(e.target.value) })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* CONFIGURAÇÃO DE QUANTIDADE (Apenas para modos Automáticos) */}
-                                {productSettings.mode !== 'manual' && (
-                                    <div className="space-y-3 p-4 bg-blue-50/30 border border-blue-100 rounded-[24px] animate-in slide-in-from-top-2">
-                                        <div className="flex justify-between items-center px-1">
-                                            <label className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Limite de Exibição</label>
-                                            <span className="text-[11px] font-black text-blue-700 bg-white px-2 py-0.5 rounded-lg shadow-sm border border-blue-100">
-                                                {productSettings.limit || 8} Itens
-                                            </span>
-                                        </div>
-                                        <input 
-                                            type="range"
-                                            min="1"
-                                            max="20"
-                                            step="1"
-                                            value={productSettings.limit || 8}
-                                            onChange={(e) => updateSettings({ limit: parseInt(e.target.value) })}
-                                            className="w-full h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                    {/* MÓDULO DE TEXTO / BOTÃO */}
+                                    {(block.type === 'text' || block.type === 'button') && (
+                                        <RenderTypographySection
+                                            block={block}
+                                            idx={idx}
+                                            config={config}
+                                            updateBlockStyle={updateBlockStyle}
+                                            updateBlock={updateBlock}
                                         />
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* SELETOR DE CATEGORIA (Apenas se modo for Category) */}
-                                {productSettings.mode === 'category' && (
-                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-[24px] space-y-3 animate-in zoom-in-95">
-                                        <label className="text-[9px] font-black text-slate-500 uppercase ml-1 flex items-center gap-2">
-                                            <Tag size={10} /> Vincular Categoria
-                                        </label>
-                                        <select 
-                                            value={productSettings.categoryId || ''}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                updateSettings({ categoryId: val ? Number(val) : null });
-                                            }}
-                                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-[10px] font-bold outline-none focus:border-blue-400"
-                                        >
-                                            <option value="">Selecione uma categoria...</option>
-                                            {categories.map((cat) => (
-                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
+                                    {/* MÓDULO DE IMAGEM */}
+                                    {block.type === 'image' && (
+                                        <RenderImageSection
+                                            block={block}
+                                            idx={idx}
+                                            handleFileUpload={handleFileUpload}
+                                            updateBlockStyle={updateBlockStyle}
+                                            updateBlock={updateBlock}
+                                        />
+                                    )}
 
-                                {/* FEEDBACK PARA MODO MANUAL */}
-                                {productSettings.mode === 'manual' && (
-                                    <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-[24px] flex items-start gap-3">
-                                        <div className="mt-1"><MousePointer2 size={14} className="text-amber-600" /></div>
-                                        <p className="text-[10px] text-amber-800 font-bold leading-relaxed uppercase tracking-tighter">
-                                            Gerencie os produtos diretamente na vitrine clicando nos botões de <span className="text-amber-600">+</span> e <span className="text-red-500">X</span>.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    {/* SEÇÃO DE LINK */}
+                                    {block.type === 'link' && (
+                                        <RenderLinkSection
+                                            block={block}
+                                            idx={idx}
+                                            updateBlock={updateBlock}
+                                        />
+                                    )}
 
+                                    {/* SEÇÃO DE LISTA */}
+                                    {block.type === 'list' && (
+                                        <ListSection
+                                            block={block}
+                                            idx={idx}
+                                            updateBlock={updateBlock}
+                                            updateBlockStyle={updateBlockStyle}
+                                            currentBreakpoint={currentBreakpoint}
+                                        />
+                                    )}
+                                </div>
+                            );
+
+                        })}
                     </div>
                 )}
             </div>
