@@ -63,7 +63,7 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
 
     const showAdminTools = isAdmin && typeof onEditSection === 'function';
     const isMobileView = currentBreakpoint === 'mobile';
-    const showDeviceFrame = isMobileView && showAdminTools;
+    const showDeviceFrame = isMobileView && showAdminTools && window.innerWidth > 768;
 
 
     // Função para salvar no Banco de Dados
@@ -88,7 +88,7 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
         setSections(prevSections => {
             const newSections = [...prevSections];
             const currentSection = newSections[index];
-            
+
             // Criamos a base do novo conteúdo
             let finalContent = { ...currentSection.content, ...newContent };
 
@@ -109,7 +109,7 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
             }
 
             newSections[index] = { ...currentSection, content: finalContent };
-            setHasChanges(true); 
+            setHasChanges(true);
             return newSections;
         });
     }, [setSections]);

@@ -8,57 +8,61 @@ import 'swiper/css/pagination';
 
 import ProdutoItem from '../../../components/ProdutoItem';
 
-export default function ProductGridEditor({ 
-    title, 
-    style, 
-    children = [], 
-    allProducts, 
-    updateContent, 
+export default function ProductGridEditor({
+    title,
+    style,
+    allProducts,
+    updateContent,
     isAdmin,
     editMode,
     promoStyle,
-    showPromo 
+    showPromo,
+    currentBreakpoint
 }) {
-    
+
+    const isMobile = currentBreakpoint === "mobile";
+
     const swiperOptions = {
-        // No editor, usamos Navigation para facilitar a troca de slides sem arrastar
         modules: [Navigation, Pagination],
-        spaceBetween: 20,
-        slidesPerView: "auto", 
-        fill: "row",
-        centeredSlides: false,
+        spaceBetween: isMobile ? 10 : 20,
+        slidesPerView: "auto",
+        centeredSlides: isMobile,
         observer: true,
-        observeParents: true,   
-        navigation: true,
+        observeParents: true,
+        navigation: !isMobile,
         pagination: { clickable: true },
-        // CRÍTICO: No editor, simulateTouch é false para o mouse não mover o carrossel
-        // ao tentar arrastar um elemento (Rnd) dentro do card.
-        simulateTouch: false, 
+        simulateTouch: false,
         grabCursor: false,
         touchStartPreventDefault: false,
     };
 
-
     return (
-        /* Replicamos a classe 'product-grid-section' para herdar os mesmos estilos da View */
         <section className="w-full py-12 p-4 border-2 border-dashed border-blue-200 rounded-[2rem] bg-slate-50/50 product-grid-section relative">
             <style>
                 {`
                     .product-grid-section .swiper {
                         width: 100%;
-                        overflow: hidden !important; 
-                        padding: 20px 4px 60px 4px !important; 
+                        /* CRÍTICO: No editor mobile, precisamos de visible para não cortar o card escalado */
+                        overflow: ${isMobile ? 'visible' : 'hidden'} !important; 
+                        padding: 20px 4px 80px 4px !important; 
                     }
 
                     .product-grid-section .swiper-wrapper {
                         display: flex !important;
-                        flex-direction: row !important; /* Garante que fiquem lado a lado */
+                        flex-direction: row !important;
                     }
 
                     .product-grid-section .swiper-slide {
-                        width: auto !important; /* Deixa o conteúdo ditar a largura */
+                        width: auto !important; 
+                        display: flex;
+                        justify-content: center;
+                        /* Garante que o slide não seja uma caixa de corte */
+                        overflow: visible !important; 
                         pointer-events: auto !important;
-                        touch-action: none !important;
+                    }
+
+                    .product-grid-section .swiper-slide:first-child {
+                        z-index: 100 !important;
                     }
 
                     .product-grid-section .swiper-button-next, 
@@ -70,6 +74,32 @@ export default function ProductGridEditor({
                         border-radius: 50%;
                         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                         top: 45% !important;
+                    }
+
+                    @media (max-width: 466px) {
+                        .product-card-wrapper {
+                            width: auto !important; 
+                            display: flex;
+                            justify-content: center;
+                            align-items: flex-start;
+                            overflow: visible !important;
+                        }
+                    }
+
+                    @media (max-width: 437px) {
+                        .product-card-wrapper {
+                            width: auto !important; 
+                            margin: 0 auto;
+                            display: flex;
+                            justify-content: center;
+                            overflow: visible !important;
+                            align-items: flex-start;
+                        }
+
+                        /* Ajuste de espaçamento para as bolinhas da paginação não sobreporem o card */
+                        .product-grid-section .swiper {
+                            padding-bottom: 80px !important;
+                        }
                     }
                 `}
             </style>
@@ -89,34 +119,33 @@ export default function ProductGridEditor({
                 <div className="w-full relative">
                     <Swiper {...swiperOptions} className="mySwiper !pb-14">
                         {allProducts?.map((prod, index) => {
-                            // --- AQUI ESTAVA O ERRO: Faltava definir a variável ---
                             const isMaster = index === 0;
-                            
-                            const isPromo = isMaster ? showPromo : (prod.sale_price && parseFloat(prod.sale_price) > 0);
+                            const isPromo = isMaster ? (editMode === 'promoStyle' || showPromo) : (prod.sale_price && parseFloat(prod.sale_price) > 0);
+
+                            const activeConfig = isPromo ? promoStyle : style;
+                            const cardW = activeConfig?.cardStyle?.width || 300;
+                            const cardH = activeConfig?.cardStyle?.height || 450;
 
                             return (
                                 <SwiperSlide key={prod.id}>
-                                    <div 
+                                    <div
                                         className="product-card-wrapper"
-                                        style={{ 
-                                            // Se for Master, largura 'auto' para o Rnd dentro do ProdutoItem trabalhar.
-                                            // Se não for, fixa no tamanho que está no banco.
-                                            width: isMaster ? 'auto' : `${style?.cardStyle?.width || 300}px`, 
-                                            height: isMaster ? 'auto' : `${style?.cardStyle?.height || 450}px`,
-                                            position: 'relative',
-                                            display: 'block'
+                                        style={{
+                                            // Se for mobile, deixamos auto para o scale do ProdutoItem gerenciar o espaço real
+                                            width: isMobile ? 'auto' : (isMaster ? 'auto' : `${cardW}px`),
+                                            height: isMobile ? 'auto' : (isMaster ? 'auto' : `${cardH}px`),
+                                            position: 'relative'
                                         }}
                                     >
                                         <ProdutoItem
-                                            key={prod.id}
                                             prod={prod}
                                             isEditing={isAdmin}
                                             editMode={isMaster ? editMode : (isPromo ? 'promoStyle' : 'style')}
                                             style={style}
                                             promoStyle={promoStyle}
                                             updateContent={updateContent}
-                                            isTemplateMaster={index === 0}
-                                            showPromo={showPromo}
+                                            isTemplateMaster={isMaster}
+                                            showPromo={isPromo}
                                         />
                                     </div>
                                 </SwiperSlide>
