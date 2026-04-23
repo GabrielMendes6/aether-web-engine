@@ -8,8 +8,22 @@
   min-height: 100vh;
   display: block; /* Remove o flex centralizador do root se houver */
 }
+html, body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0;
+    padding: 0;
+}
 
-body {
-  margin: 0;
-  overflow-x: hidden;
+/* Força todas as seções a serem fluidas */
+section, .group\/section {
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+}
+
+/* Impede que imagens ou elementos internos empurrem a largura da página */
+img, video, canvas {
+    max-width: 100%;
+    height: auto;
 }

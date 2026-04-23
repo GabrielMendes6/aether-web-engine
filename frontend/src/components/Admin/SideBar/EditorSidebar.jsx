@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Image as ImageIcon, Trash2,
     ArrowUp, ArrowDown, X, UploadCloud,
-    ImagePlus, Layout, Move, MousePointer2, Tag
+    ImagePlus, Layout, Move, MousePointer2, Tag, Settings
 } from 'lucide-react';
 import api from '../../../Services/api';
 import ListSection from "./ListSection";
@@ -10,7 +10,7 @@ import RenderLinkSection from "./LinkSection";
 import RenderImageSection from './ImageSection';
 import RenderTypographySection from './TypographySection';
 
-export default function EditorSidebar({ activeSection, onClose, onUpdate, currentBreakpoint }) {
+export default function EditorSidebar({ activeSection, onClose, onUpdate, currentBreakpoint, selectedElementId, editMode, setEditMode }) {
     /*
     |--------------------------------------------------------------------------
     | FLEX SECTION
@@ -18,12 +18,12 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
     */
     if (!activeSection || !activeSection.content) return null;
     const [isUploading, setIsUploading] = useState(false);
-    const [activeTab, setActiveTab] = useState('stylew'); // 'elements' ou 'style'
+    const [activeTab, setActiveTab] = useState('elements'); // 'elements' ou 'style'
     const { content } = activeSection;
     const { settings = {}, children = [] } = content;
     const [categories, setCategories] = useState([]);
+    const [isPromo, setIsPromo] = useState(false);
 
-    console.log(activeSection);
 
     const productSettings = {
         mode: settings.mode || 'random', // 'random' como padrão
@@ -85,7 +85,7 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
     const updateBlockStyle = (idx, style) => {
         // Propriedades que mudam conforme o tamanho da tela
-        const geometricProps = ['fontSize', 'width', 'height', 'textAlign', 'letterSpacing', 'tag', 'lineHeight', 'listStyleType', 'gap'];
+        const geometricProps = ['fontSize', 'width', 'height', 'textAlign', 'letterSpacing', 'tag', 'lineHeight', 'listStyleType', 'gap', 'alignItems', 'borderRadius'];
 
         // Propriedades que são iguais em qualquer tamanho de tela
         const isGeometric = Object.keys(style).some(key => geometricProps.includes(key));
@@ -192,7 +192,44 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
     |--------------------------------------------------------------------------
     */
 
-    // Busca as categorias da sua nova API
+    const updateStyleProperty = (styleKey, data, isVisual = false) => {
+        const currentContent = { ...activeSection.content };
+
+        // Usamos o editMode da prop para saber qual gaveta abrir
+        const targetModeContent = { ...(currentContent[editMode] || {}) };
+        const itemToUpdate = { ...(targetModeContent[styleKey] || {}) };
+
+        let updatedItem;
+        if (isVisual) {
+            updatedItem = {
+                ...itemToUpdate,
+                style: { ...(itemToUpdate.style || {}), ...data }
+            };
+        } else {
+            updatedItem = { ...itemToUpdate, ...data };
+        }
+
+        onUpdate({
+            ...currentContent,
+            [editMode]: {
+                ...targetModeContent,
+                [styleKey]: updatedItem
+            }
+        });
+    };
+
+    // Definição do Custom Hook
+    const useVerifyPromotion = (isSale) => {
+        useEffect(() => {
+            setIsPromo(!!isSale);
+        }, [isSale]);
+    }
+
+    const isEditingChild = selectedElementId && activeSection.content.children?.[selectedElementId];
+    const targetData = isEditingChild
+        ? activeSection.content.children[selectedElementId]
+        : activeSection.content;
+
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -205,6 +242,8 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
 
         fetchCategories();
     }, []);
+
+
 
     return (
         <aside className="fixed right-0 top-0 h-full w-[400px] bg-white shadow-[-20px_0_80px_rgba(0,0,0,0.15)] z-[99999] border-l border-slate-100 flex flex-col animate-in slide-in-from-right duration-500 ease-out font-sans">
@@ -498,6 +537,35 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                                         <button onClick={() => onUpdate({ ...content, children: children.filter((_, i) => i !== idx) })} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
                                     </div>
 
+                                    {/* CAMPO DE TEXTO CUSTOMIZADO */}
+                                    {(styleKey === 'nameStyle' || styleKey === 'priceStyle' || styleKey === 'salePriceStyle') && (
+                                        <div className="space-y-1 mb-4">
+                                            <span className="text-[8px] text-slate-400 font-bold ml-1 uppercase underline">
+                                                Sobrescrever Texto ({info.label})
+                                            </span>
+                                            <input
+                                                type="text"
+                                                placeholder="Usar valor original do produto..."
+                                                value={block.customText || ''}
+                                                onChange={(e) => {
+                                                    // Função que já existe no seu Sidebar para atualizar propriedades
+                                                    const newContent = {
+                                                        ...currentContent,
+                                                        [editMode]: {
+                                                            ...modeData,
+                                                            [styleKey]: {
+                                                                ...block,
+                                                                customText: e.target.value
+                                                            }
+                                                        }
+                                                    };
+                                                    onUpdate(newContent);
+                                                }}
+                                                className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500 placeholder:font-normal"
+                                            />
+                                        </div>
+                                    )}
+
                                     {/* MÓDULO DE GEOMETRIA (POR BREAKPOINT) */}
                                     <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
                                         <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-2"><Move size={12} /> Posicionamento ({currentBreakpoint})</label>
@@ -566,94 +634,142 @@ export default function EditorSidebar({ activeSection, onClose, onUpdate, curren
                             );
                         })}
 
-                        {activeSection.component === 'ProductSection' && children.map((block, idx) => {
-                            const config = block.breakpoints?.[currentBreakpoint] || block.breakpoints?.desktop || {
-                                x: block.x || 0,
-                                y: block.y || 0,
-                                width: block.style?.width || '300px'
-                            };
-
-                            console.log(block);
-
-                            return (
-                                <div key={idx} className="group/block bg-white border border-slate-100 rounded-[32px] p-6 space-y-6 transition-all hover:shadow-2xl hover:shadow-slate-200/50 border-t-4 border-t-blue-500/10">
-
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-[11px] shadow-lg shadow-slate-900/20">{idx + 1}</div>
-                                            <span className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">{block.type}</span>
-                                        </div>
-                                        <button onClick={() => onUpdate({ ...content, children: children.filter((_, i) => i !== idx) })} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                                    </div>
-
-                                    {/* MÓDULO DE GEOMETRIA (POR BREAKPOINT) */}
-                                    <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-2"><Move size={12} /> Posicionamento ({currentBreakpoint})</label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1 text-left">
-                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Eixo X</span>
-                                                <input type="number" value={Math.round(config.x)} onChange={(e) => updateBlock(idx, { x: parseInt(e.target.value) })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
-                                            </div>
-                                            <div className="space-y-1 text-left">
-                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Eixo Y</span>
-                                                <input type="number" value={Math.round(config.y)} onChange={(e) => updateBlock(idx, { y: parseInt(e.target.value) })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
-                                            </div>
-                                            <div className="space-y-1 text-left">
-                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Largura</span>
-                                                <input type="text" value={config.width} onChange={(e) => updateBlockStyle(idx, { width: e.target.value })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
-                                            </div>
-                                            <div className="space-y-1 text-left">
-                                                <span className="text-[8px] text-slate-400 font-bold ml-1">Z-Index</span>
-                                                <input type="number" value={block.zIndex || 1} onChange={(e) => updateBlock(idx, { zIndex: parseInt(e.target.value) })} className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* MÓDULO DE TEXTO / BOTÃO */}
-                                    {(block.type === 'text' || block.type === 'button') && (
-                                        <RenderTypographySection
-                                            block={block}
-                                            idx={idx}
-                                            config={config}
-                                            updateBlockStyle={updateBlockStyle}
-                                            updateBlock={updateBlock}
-                                        />
-                                    )}
-
-                                    {/* MÓDULO DE IMAGEM */}
-                                    {block.type === 'image' && (
-                                        <RenderImageSection
-                                            block={block}
-                                            idx={idx}
-                                            handleFileUpload={handleFileUpload}
-                                            updateBlockStyle={updateBlockStyle}
-                                            updateBlock={updateBlock}
-                                        />
-                                    )}
-
-                                    {/* SEÇÃO DE LINK */}
-                                    {block.type === 'link' && (
-                                        <RenderLinkSection
-                                            block={block}
-                                            idx={idx}
-                                            updateBlock={updateBlock}
-                                        />
-                                    )}
-
-                                    {/* SEÇÃO DE LISTA */}
-                                    {block.type === 'list' && (
-                                        <ListSection
-                                            block={block}
-                                            idx={idx}
-                                            updateBlock={updateBlock}
-                                            updateBlockStyle={updateBlockStyle}
-                                            currentBreakpoint={currentBreakpoint}
-                                        />
-                                    )}
+                        {activeSection.component === 'ProductSection' && (
+                            <div className="space-y-6">
+                                {/* SELETOR DE MODO */}
+                                <div className="bg-slate-100 p-1 rounded-[22px] grid grid-cols-2 gap-1 mb-8 sticky top-0 z-10 shadow-sm">
+                                    <button
+                                        onClick={() => setEditMode('style')}
+                                        className={`py-3 rounded-[18px] text-[10px] font-black uppercase transition-all ${editMode === 'style' ? 'bg-white text-blue-600 shadow-md scale-[1.02]' : 'text-slate-400'
+                                            }`}
+                                    >
+                                        Layout Padrão
+                                    </button>
+                                    <button
+                                        onClick={() => setEditMode('promoStyle')}
+                                        className={`py-3 rounded-[18px] text-[10px] font-black uppercase transition-all ${editMode === 'promoStyle' ? 'bg-red-500 text-white shadow-md scale-[1.02]' : 'text-slate-400'
+                                            }`}
+                                    >
+                                        Layout Promoção
+                                    </button>
                                 </div>
-                            );
 
-                        })}
+                                {/* AVISO DE MODO PROMOÇÃO SE O PRODUTO NÃO TIVER SALE */}
+                                {editMode === 'promoStyle' && (
+                                    <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-6">
+                                        <p className="text-[10px] text-amber-700 font-bold uppercase tracking-tight leading-relaxed">
+                                            💡 Modo de Visualização Forçada: Injetando valores de oferta fictícios para ajuste de layout.
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="space-y-8">
+                                    {['imageStyle', 'nameStyle', 'priceStyle', 'salePriceStyle', 'buttonStyle'].map((styleKey, idx) => {
+                                        const currentContent = activeSection.content || {};
+                                        const modeData = currentContent[editMode] || {};
+                                        const block = modeData[styleKey] || {};
+
+                                        // No modo Padrão, o Preço de Oferta é ocultado
+                                        if (editMode === 'style' && styleKey === 'salePriceStyle') return null;
+
+                                        const typeMap = {
+                                            imageStyle: { type: 'image', label: 'Imagem' },
+                                            nameStyle: { type: 'text', label: 'Nome' },
+                                            priceStyle: { type: 'text', label: 'Preço Original' },
+                                            salePriceStyle: { type: 'text', label: 'Preço Oferta' },
+                                            buttonStyle: { type: 'button', label: 'Botão' }
+                                        };
+
+                                        const info = typeMap[styleKey];
+
+                                        {/* Dentro do map de campos de geometria */ }
+                                        const handleGeometryChange = (prop, value) => {
+                                            const updatedValue = parseInt(value) || 0;
+                                            const currentContent = { ...activeSection.content };
+
+                                            // Criamos uma cópia profunda do modo atual (style ou promoStyle)
+                                            const currentModeData = { ...(currentContent[editMode] || {}) };
+
+                                            if (styleKey === 'cardStyle') {
+                                                // Replica alteração do card em ambos os modos para manter consistência de grid
+                                                currentContent.style = {
+                                                    ...(currentContent.style || {}),
+                                                    cardStyle: { ...(currentContent.style?.cardStyle || {}), [prop]: updatedValue }
+                                                };
+                                                currentContent.promoStyle = {
+                                                    ...(currentContent.promoStyle || {}),
+                                                    cardStyle: { ...(currentContent.promoStyle?.cardStyle || {}), [prop]: updatedValue }
+                                                };
+                                            } else {
+                                                // Atualiza o elemento específico no modo ativo
+                                                currentModeData[styleKey] = {
+                                                    ...(currentModeData[styleKey] || {}),
+                                                    [prop]: updatedValue
+                                                };
+                                                currentContent[editMode] = currentModeData;
+                                            }
+
+                                            onUpdate(currentContent);
+                                        };
+
+                                        return (
+                                            <div key={`${editMode}-${styleKey}`} className={`group/block bg-white border border-slate-100 rounded-[32px] p-6 space-y-6 transition-all hover:shadow-xl border-t-4 ${editMode === 'promoStyle' ? 'border-t-red-500/20' : 'border-t-blue-500/10'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-8 h-8 ${editMode === 'promoStyle' ? 'bg-red-500' : 'bg-slate-900'} text-white rounded-xl flex items-center justify-center font-black text-[11px]`}>
+                                                        {idx + 1}
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">
+                                                        {info.label} — <span className={editMode === 'promoStyle' ? 'text-red-500' : 'text-blue-500'}>{editMode}</span>
+                                                    </span>
+                                                </div>
+
+                                                {/* GRID DE GEOMETRIA */}
+                                                <div className="space-y-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        {[
+                                                            { label: 'Eixo X', prop: 'x' },
+                                                            { label: 'Eixo Y', prop: 'y' },
+                                                            { label: 'Largura', prop: 'width' },
+                                                            { label: 'Altura', prop: 'height' },
+                                                            { label: 'Z-Index', prop: 'zIndex' },
+                                                        ].map((field) => (
+                                                            <div key={field.prop} className="space-y-1">
+                                                                <span className="text-[8px] text-slate-400 font-bold ml-1 uppercase">{field.label}</span>
+                                                                <input
+                                                                    type="number"
+                                                                    value={block[field.prop] || 0}
+                                                                    onChange={(e) => handleGeometryChange(field.prop, e.target.value)}
+                                                                    className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-[11px] font-bold outline-none focus:border-blue-500"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* SEÇÕES DE ESTILO */}
+                                                <div className="pt-2">
+                                                    {info.type === 'image' ? (
+                                                        <RenderImageSection
+                                                            block={{ ...block, type: 'image' }}
+                                                            updateBlock={(id, data) => updateStyleProperty(styleKey, data, false, editMode)}
+                                                            updateBlockStyle={(id, data) => updateStyleProperty(styleKey, data, true, editMode)}
+                                                            isProduct={true}
+                                                        />
+                                                    ) : (
+                                                        <RenderTypographySection
+                                                            block={{ ...block, type: info.type }}
+                                                            updateBlockStyle={(id, data) => updateStyleProperty(styleKey, data, true, editMode)}
+                                                            updateBlock={(id, data) => updateStyleProperty(styleKey, data, false, editMode)}
+                                                            hideTextEdit={true}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

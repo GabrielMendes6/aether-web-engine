@@ -239,8 +239,6 @@ export default function FlexSectionEditor({  settings = {},  children = [],  upd
                             size={{ width: resolved.box.width, height: resolved.box.height }}
                             position={{ x: resolved.box.x, y: resolved.box.y }}
                             bounds="parent"
-                            // IMPORTANTE: Isso diz ao RND para NÃO arrastar se o clique 
-                            // for em algo que tem contenteditable="true"
                             cancel="[contenteditable='true']"
                             onDragStop={(e, d) => {
                                 setShowGuides({ x: false, y: false });
@@ -284,3 +282,4 @@ export default function FlexSectionEditor({  settings = {},  children = [],  upd
         </section>
     );
 }
+

@@ -8,16 +8,27 @@ import 'swiper/css/pagination';
 
 import ProdutoItem from '../../../components/ProdutoItem';
 
-export default function ProductGridEditor({ title, style, children = [], allProducts, updateContent, isAdmin }) {
+export default function ProductGridEditor({ 
+    title, 
+    style, 
+    children = [], 
+    allProducts, 
+    updateContent, 
+    isAdmin,
+    editMode,
+    promoStyle,
+    showPromo 
+}) {
     
     const swiperOptions = {
         // No editor, usamos Navigation para facilitar a troca de slides sem arrastar
         modules: [Navigation, Pagination],
         spaceBetween: 20,
         slidesPerView: "auto", 
+        fill: "row",
         centeredSlides: false,
         observer: true,
-        observeParents: true,
+        observeParents: true,   
         navigation: true,
         pagination: { clickable: true },
         // CRÍTICO: No editor, simulateTouch é false para o mouse não mover o carrossel
@@ -27,7 +38,6 @@ export default function ProductGridEditor({ title, style, children = [], allProd
         touchStartPreventDefault: false,
     };
 
-    console.log(children    )
 
     return (
         /* Replicamos a classe 'product-grid-section' para herdar os mesmos estilos da View */
@@ -41,14 +51,16 @@ export default function ProductGridEditor({ title, style, children = [], allProd
                     }
 
                     .product-grid-section .swiper-wrapper {
-                        display: flex !important;   
+                        display: flex !important;
+                        flex-direction: row !important; /* Garante que fiquem lado a lado */
                     }
 
                     .product-grid-section .swiper-slide {
-                        width: auto !important;
-                        display: flex;
-                        justify-content: center;
+                        width: auto !important; /* Deixa o conteúdo ditar a largura */
+                        pointer-events: auto !important;
+                        touch-action: none !important;
                     }
+
                     .product-grid-section .swiper-button-next, 
                     .product-grid-section .swiper-button-prev {
                         color: #2563eb !important;
@@ -76,26 +88,40 @@ export default function ProductGridEditor({ title, style, children = [], allProd
 
                 <div className="w-full relative">
                     <Swiper {...swiperOptions} className="mySwiper !pb-14">
-                        {allProducts?.map((prod, index) => (
-                            <SwiperSlide key={prod.id}>
-                                <div 
-                                    className="product-card-wrapper"
-                                    style={{ 
-                                        width: `${style?.cardStyle?.width || 300}px`, 
-                                        height: `${style?.cardStyle?.height || 450}px`,
-                                        position: 'relative'
-                                    }}
-                                >
-                                    <ProdutoItem
-                                        prod={prod}
-                                        isEditing={isAdmin}
-                                        isTemplateMaster={index === 0}
-                                        style={style}
-                                        updateContent={updateContent}
-                                    />
-                                </div>
-                            </SwiperSlide>
-                        ))}
+                        {allProducts?.map((prod, index) => {
+                            // --- AQUI ESTAVA O ERRO: Faltava definir a variável ---
+                            const isMaster = index === 0;
+                            
+                            const isPromo = isMaster ? showPromo : (prod.sale_price && parseFloat(prod.sale_price) > 0);
+
+                            return (
+                                <SwiperSlide key={prod.id}>
+                                    <div 
+                                        className="product-card-wrapper"
+                                        style={{ 
+                                            // Se for Master, largura 'auto' para o Rnd dentro do ProdutoItem trabalhar.
+                                            // Se não for, fixa no tamanho que está no banco.
+                                            width: isMaster ? 'auto' : `${style?.cardStyle?.width || 300}px`, 
+                                            height: isMaster ? 'auto' : `${style?.cardStyle?.height || 450}px`,
+                                            position: 'relative',
+                                            display: 'block'
+                                        }}
+                                    >
+                                        <ProdutoItem
+                                            key={prod.id}
+                                            prod={prod}
+                                            isEditing={isAdmin}
+                                            editMode={isMaster ? editMode : (isPromo ? 'promoStyle' : 'style')}
+                                            style={style}
+                                            promoStyle={promoStyle}
+                                            updateContent={updateContent}
+                                            isTemplateMaster={index === 0}
+                                            showPromo={showPromo}
+                                        />
+                                    </div>
+                                </SwiperSlide>
+                            );
+                        })}
                     </Swiper>
                 </div>
             </div>

@@ -1,21 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../../Services/api';
 import {
     Plus, LayoutTemplate, X, MoveUp, MoveDown,
-    Trash2, Settings, Monitor, Smartphone
+    Trash2, Settings, Monitor, Smartphone, Save
 } from 'lucide-react';
 
-// Importação dos Componentes Orquestradores (que decidem entre View/Editor internamente)
+// Importação dos Componentes
 import HeroSection from '../../Pages/Sections/HeroSection';
 import ProductGrid from '../../Pages/Sections/ProductGrid/index';
-import FlexSection from '../../Pages/Sections/FlexSection/index'; // Alterado para o index/orquestrador
+import FlexSection from '../../Pages/Sections/FlexSection/index';
 import CarouselBannerSection from '../../Pages/Sections/CarouselBannerSection';
 
 const COMPONENT_MAP = {
     'HeroSection': HeroSection,
     'ProductSection': ProductGrid,
-    'FlexSection': FlexSection, // Agora mapeia para o componente inteligente
+    'FlexSection': FlexSection,
     'CarrosselBanner': CarouselBannerSection
 };
 
@@ -55,27 +55,61 @@ const AVAILABLE_COMPONENTS = [
     },
 ]
 
-
-export default function PageRenderer({ sections = [], setSections, onReorder, onEditSection, currentBreakpoint, setCurrentBreakpoint, slug, isAdmin, editingIndex }) {
-    const location = useLocation();
+export default function PageRenderer({ sections = [], setSections, onReorder, onEditSection, currentBreakpoint, setCurrentBreakpoint, slug, isAdmin, editingIndex, editMode }) {
     const [showModal, setShowModal] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false); // <--- ESTADO ADICIONADO AQUI
 
     const showAdminTools = isAdmin && typeof onEditSection === 'function';
-
     const isMobileView = currentBreakpoint === 'mobile';
     const showDeviceFrame = isMobileView && showAdminTools;
+
+
+    // Função para salvar no Banco de Dados
+    const saveAllChanges = async () => {
+        setIsSaving(true);
+        try {
+            await api.post('/api/sections/reorder', {
+                page_slug: slug,
+                sections: sections.map(s => ({ id: s.id, order: s.order, content: s.content }))
+            });
+            setHasChanges(false);
+            console.log("✅ [Luci] Alterações salvas com sucesso.");
+        } catch (err) {
+            console.error("❌ [Luci] Erro ao salvar:", err);
+            alert("Erro ao sincronizar com o servidor.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleUpdateContent = useCallback((index, newContent) => {
         setSections(prevSections => {
             const newSections = [...prevSections];
-            newSections[index] = {
-                ...newSections[index],
-                content: {
-                    ...newSections[index].content,
-                    ...newContent
-                }
-            };
+            const currentSection = newSections[index];
+            
+            // Criamos a base do novo conteúdo
+            let finalContent = { ...currentSection.content, ...newContent };
+
+            // Proteção para o Modo Padrão (style)
+            if (newContent.style) {
+                finalContent.style = {
+                    ...(currentSection.content.style || {}),
+                    ...newContent.style
+                };
+            }
+
+            // Proteção para o Modo Promoção (promoStyle)
+            if (newContent.promoStyle) {
+                finalContent.promoStyle = {
+                    ...(currentSection.content.promoStyle || {}),
+                    ...newContent.promoStyle
+                };
+            }
+
+            newSections[index] = { ...currentSection, content: finalContent };
+            setHasChanges(true); 
             return newSections;
         });
     }, [setSections]);
@@ -95,7 +129,6 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
             setShowModal(false);
         } catch (err) {
             console.error('[Luci] Erro ao Criar:', err);
-            alert("Erro ao criar seção no servidor.");
         } finally {
             setIsCreating(false);
         }
@@ -114,29 +147,31 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
     return (
         <div className={`flex flex-col items-center w-full min-h-screen transition-all duration-500 ${showAdminTools ? 'bg-slate-50/50 pb-40' : 'bg-white'}`}>
 
-            {/* TOOLBAR DE DISPOSITIVOS: Só aparece no modo editor */}
+            {/* TOOLBAR DE DISPOSITIVOS E BOTÃO SALVAR */}
             {showAdminTools && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[10000] flex bg-white/95 backdrop-blur-md border border-slate-200 p-1.5 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4">
-                    <button
-                        onClick={() => setCurrentBreakpoint('desktop')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${currentBreakpoint === 'desktop' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
-                    >
-                        <Monitor size={16} /> Desktop
-                    </button>
-                    <button
-                        onClick={() => setCurrentBreakpoint('mobile')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${currentBreakpoint === 'mobile' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
-                    >
-                        <Smartphone size={16} /> Mobile
-                    </button>
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[10000] flex gap-4">
+                    <div className="flex bg-white/95 backdrop-blur-md border border-slate-200 p-1.5 rounded-2xl shadow-2xl">
+                        <button
+                            onClick={() => setCurrentBreakpoint('desktop')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${currentBreakpoint === 'desktop' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
+                        >
+                            <Monitor size={16} /> Desktop
+                        </button>
+                        <button
+                            onClick={() => setCurrentBreakpoint('mobile')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all ${currentBreakpoint === 'mobile' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
+                        >
+                            <Smartphone size={16} /> Mobile
+                        </button>
+                    </div>
                 </div>
             )}
 
             {/* CONTAINER PRINCIPAL */}
             <div className={`w-full flex flex-col items-center ${showAdminTools ? 'pt-28' : ''} transition-all duration-700`}>
                 <div className={`transition-all duration-700 ease-in-out relative bg-white ${showDeviceFrame
-                        ? 'w-[430px] border-[12px] border-slate-950 rounded-[60px] shadow-[0_0_100px_rgba(0,0,0,0.2)] h-[844px] overflow-y-auto overflow-x-hidden scrollbar-hide box-content'
-                        : 'w-full max-w-none border-none rounded-none'
+                    ? 'w-[430px] border-[12px] border-slate-950 rounded-[60px] shadow-[0_0_100px_rgba(0,0,0,0.2)] h-[844px] overflow-y-auto overflow-x-hidden scrollbar-hide box-content'
+                    : 'w-full max-w-none border-none rounded-none'
                     }`}>
 
                     {showDeviceFrame && (
@@ -148,10 +183,11 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                             const Component = COMPONENT_MAP[section.component];
                             if (!Component) return null;
 
+
+                            console.log(section.content)
+
                             return (
                                 <div key={`${section.id}-${index}`} className="relative group/section">
-
-                                    {/* CONTROLES FLUTUANTES: Aparecem no hover apenas se não estiver editando a seção */}
                                     {showAdminTools && (
                                         <div className="absolute top-4 right-6 z-[1000] flex items-center gap-2 opacity-0 group-hover/section:opacity-100 transition-all duration-300 transform translate-y-2 group-hover/section:translate-y-0">
                                             <div className="flex bg-slate-900/90 shadow-2xl border border-slate-700/50 rounded-2xl p-1.5 backdrop-blur-md">
@@ -176,6 +212,7 @@ export default function PageRenderer({ sections = [], setSections, onReorder, on
                                             isAdmin={isAdmin}
                                             currentBreakpoint={currentBreakpoint}
                                             updateContent={(newContent) => handleUpdateContent(index, newContent)}
+                                            editMode={editMode}
                                         />
                                     </section>
                                 </div>

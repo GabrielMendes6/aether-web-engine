@@ -4,27 +4,27 @@ import ProductGridView from './ProductGridView';
 import api from '../../../Services/api';
 
 export default function ProductGrid(props) {
-    // 1. Desestruturação correta com base no PageRenderer
-    // O PageRenderer passa: {...section.content}, isAdmin, updateContent, etc.
-    const { 
-        isAdmin, 
-        updateContent, 
-        title, 
-        style, 
-        produtos = [], 
+    const {
+        isAdmin,
+        updateContent,
+        title,
+        style,
+        promoStyle,
+        produtos = [],
+        activeSection,
+        editMode,
+        setEditMode,
         mode = 'random',
         categoryId = null
     } = props;
 
     const [productsData, setProductsData] = useState([]);
     const [loading, setLoading] = useState(false);
-
+    
     useEffect(() => {
         let isMounted = true;
-
-        // Definimos o limite com base no style enviado pelo DB ou padrão 4
         const limit = style?.columns || 4;
-
+        
         const syncProducts = async () => {
             const isAutoMode = mode === 'random' || mode === 'category';
             const isEmpty = !produtos || produtos.length === 0;
@@ -44,7 +44,6 @@ export default function ProductGrid(props) {
                     const savedIds = produtos.map(p => p.id).join(',');
                     endpoint = `/api/products/mode?mode=manual&ids=${savedIds}`;
                 } else {
-                    // Caso não tenha produtos e não seja auto, para o loading
                     setLoading(false);
                     return;
                 }
@@ -54,8 +53,6 @@ export default function ProductGrid(props) {
 
                 if (isMounted) {
                     setProductsData(fetched);
-                    
-                    // Se buscou automático e está no modo admin, sincroniza os IDs para o banco
                     if (isAutoMode && isEmpty && fetched.length > 0) {
                         const newProdutosJson = fetched.map(p => ({ id: p.id, style: {} }));
                         updateContent?.({ produtos: newProdutosJson });
@@ -73,19 +70,20 @@ export default function ProductGrid(props) {
 
     }, [mode, categoryId, produtos?.length, style?.columns]);
 
-    // 2. Renderização Decisiva
-    // O isAdmin controla se exibimos o Editor ou a View
+
     return isAdmin ? (
-        <ProductGridEditor 
-            {...props} 
-            allProducts={productsData} 
-            loading={loading} 
+        <ProductGridEditor
+            {...props}
+            allProducts={productsData}
+            loading={loading}
+            editMode={editMode}
+            setEditMode={setEditMode}
         />
     ) : (
-        <ProductGridView 
-            {...props} 
-            allProducts={productsData} 
-            loading={loading} 
+        <ProductGridView
+            {...props}
+            allProducts={productsData}
+            loading={loading}
         />
     );
 }

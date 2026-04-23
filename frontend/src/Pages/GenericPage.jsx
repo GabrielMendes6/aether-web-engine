@@ -18,6 +18,22 @@ export default function GenericPage() {
     const [hasChanges, setHasChanges] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const isEditorMode = !!useMatch("/admin/editor/:slug");
+    const [editMode, setEditMode] = useState('style');
+
+    console.log('Modo carregado: ' + editMode);
+
+    const handleUpdateContent = (index, newContent) => {
+        console.log("--- DEBUG GENERIC PAGE ---");
+        console.log("ID da Seção:", sections[index]?.id);
+        console.log("Conteúdo recebido:", newContent);
+
+        setSections(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], content: newContent };
+            return updated;
+        });
+        setHasChanges(true);
+    };
 
     const loadPageData = async () => {
         setLoading(true);
@@ -35,23 +51,23 @@ export default function GenericPage() {
     useEffect(() => { loadPageData(); }, [pageSlug]);
 
     useEffect(() => {
-        // Se a tela física for pequena, já começa em modo mobile
-        if (window.innerWidth < 768) {
-            setCurrentBreakpoint('mobile');
-        }
-    });
 
-    // No GenericPage.jsx
-    const handleUpdateContent = (index, newContent) => {
-        // Usamos uma técnica funcional para evitar problemas de concorrência
-        setSections(prev => {
-            const updated = [...prev];
-            updated[index] = { ...updated[index], content: newContent };
-            return updated;
-        });
-        
-        if (!hasChanges) setHasChanges(true);
-    };
+        const handleResize = () => {
+            const width = window.innerWidth;
+            if (width <= 768) {
+                setCurrentBreakpoint('mobile');
+            } else {
+                setCurrentBreakpoint('desktop');
+            }
+        };
+
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
 
     const handleReorder = (index, direction) => {
         const newSections = [...sections];
@@ -82,11 +98,11 @@ export default function GenericPage() {
 
     return (
         <div className="relative min-h-screen bg-white flex overflow-x-hidden">
-            
+
             {/* ÁREA DO SITE: Encolhe quando a sidebar abre */}
             <div className={`flex-1 transition-all duration-300 ${editingIndex !== null ? 'mr-80' : ''}`}>
-                <PageRenderer 
-                    sections={sections} 
+                <PageRenderer
+                    sections={sections}
                     setSections={(newList) => {
                         setSections(newList);
                         setHasChanges(true);
@@ -98,13 +114,17 @@ export default function GenericPage() {
                     setCurrentBreakpoint={setCurrentBreakpoint}
                     isAdmin={isAdmin && isEditorMode}
                     slug={pageSlug}
+                    activeSection={editingIndex !== null ? sections[editingIndex] : null}
+                    editMode={editMode}
                 />
             </div>
 
             {/* SIDEBAR DE EDIÇÃO */}
-            <EditorSidebar 
+            <EditorSidebar
                 activeSection={editingIndex !== null ? sections[editingIndex] : null}
-                onClose={() => setEditingIndex(null)}
+                onClose={() => {
+                    setEditingIndex(null);
+                }}
                 onUpdate={(newContent) => {
                     const updated = [...sections];
                     updated[editingIndex].content = newContent;
@@ -113,6 +133,8 @@ export default function GenericPage() {
                 }}
                 currentBreakpoint={currentBreakpoint}
                 setCurrentBreakpoint={setCurrentBreakpoint}
+                editMode={editMode}
+                setEditMode={setEditMode}
             />
 
             {/* BARRA DE AÇÕES (SALVAR/DESCARTAR) */}
