@@ -73,12 +73,16 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
         }
         const handleResize = () => {
             const threshold = 438;
+            
             if (window.innerWidth < threshold) {
                 const availableWidth = window.innerWidth * 0.85; 
                 setScale(availableWidth / cardSize.width);
             } else {
                 setScale(1);
             }
+
+            // Dentro do useEffect do handleResize no ProdutoItem.jsx
+            console.log(`[DEBUG ITEM] ID: ${prod.id} | Scale: ${scale} | VisualWidth: ${cardSize.width * scale}`);
         };
         handleResize();
         window.addEventListener('resize', handleResize);
@@ -126,43 +130,57 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
         );
     };
 
-    // --- CÁLCULO DE COMPENSAÇÃO LATERAL ---
-    const widthDecline = cardSize.width * (1 - scale);
+    // --- LÓGICA DE DIMENSÕES VISUAIS ---
+    // Calculamos quanto espaço o card realmente ocupa após o scale
+    const visualWidth = cardSize.width * scale;
+    const visualHeight = cardSize.height * scale;
 
     return (
-        <div style={{ 
-            width: `${cardSize.width}px`, 
-            height: `${cardSize.height}px`, // ALTURA MANTIDA FIXA
-            position: 'relative',
-            transform: scale !== 1 ? `scale(${scale})` : 'none',
-            transformOrigin: 'top center', // Centraliza o encolhimento para as margens funcionarem
-            
-            // Compensação lateral para o Swiper não esmagar o card
-            marginLeft: scale !== 1 ? `-${widthDecline / 2}px` : '0px',
-            marginRight: scale !== 1 ? `-${widthDecline / 2}px` : '0px',
-            
-            transition: 'transform 0.2s ease-out',
-        }}>
-            <div className={`relative bg-white shadow-lg w-full h-full rounded-[16px] overflow-hidden border ${activeMode === 'promoStyle' ? 'border-red-100' : 'border-slate-100'}`}>
-                {renderElement('imageStyle',
-                    <img src={prod?.image_url} className="w-full h-full object-fill pointer-events-none" alt="" />,
-                    imageStyle, setImageStyle
-                )}
-                {renderElement('nameStyle', <ElementoVisual styleConfig={nameStyle} className="px-2"><span>{prod?.name}</span></ElementoVisual>, nameStyle, setNameStyle)}
-                {renderElement('priceStyle',
-                    <ElementoVisual styleConfig={priceStyle}>
-                        <span style={{ textDecoration: activeMode === 'promoStyle' ? 'line-through' : 'none', opacity: activeMode === 'promoStyle' ? 0.5 : 1 }}>
-                            R$ {prod?.price}
-                        </span>
-                    </ElementoVisual>, priceStyle, setPriceStyle)}
-                {renderElement('salePriceStyle',
-                    <ElementoVisual styleConfig={salePriceStyle} isPromoPrice={true}>
-                        <span>R$ {prod?.sale_price || '99,90'}</span>
-                    </ElementoVisual>, salePriceStyle, setSalePriceStyle)}
-                {renderElement('buttonStyle',
-                    <ElementoVisual styleConfig={buttonStyle} className="bg-blue-600 text-white rounded-lg font-bold">
-                        <span>Comprar</span>
-                    </ElementoVisual>, buttonStyle, setButtonStyle)}
+        <div 
+            className="produto-item-container"
+            style={{ 
+                width: `${visualWidth}px`, 
+                height: `${visualHeight}px`,
+                position: 'relative',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                // O z-index maior no Master impede que vizinhos fiquem por cima dele no editor
+                zIndex: isTemplateMaster ? 50 : 1,
+            }}
+        >
+            <div style={{ 
+                // O card interno mantém o tamanho nominal (300x450) para os elementos Rnd funcionarem
+                width: `${cardSize.width}px`, 
+                height: `${cardSize.height}px`,
+                position: 'absolute',
+                top: 0,
+                left: '50%',
+                transform: `translateX(-50%) scale(${scale})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.2s ease-out',
+            }}>
+                <div className={`relative bg-white shadow-lg w-full h-full rounded-[16px] overflow-hidden border ${activeMode === 'promoStyle' ? 'border-red-100' : 'border-slate-100'}`}>
+                    {renderElement('imageStyle',
+                        <img src={prod?.image_url} className="w-full h-full object-fill pointer-events-none" alt="" />,
+                        imageStyle, setImageStyle
+                    )}
+                    {renderElement('nameStyle', <ElementoVisual styleConfig={nameStyle} className="px-2"><span>{prod?.name}</span></ElementoVisual>, nameStyle, setNameStyle)}
+                    {renderElement('priceStyle',
+                        <ElementoVisual styleConfig={priceStyle}>
+                            <span style={{ textDecoration: activeMode === 'promoStyle' ? 'line-through' : 'none', opacity: activeMode === 'promoStyle' ? 0.5 : 1 }}>
+                                R$ {prod?.price}
+                            </span>
+                        </ElementoVisual>, priceStyle, setPriceStyle)}
+                    {renderElement('salePriceStyle',
+                        <ElementoVisual styleConfig={salePriceStyle} isPromoPrice={true}>
+                            <span>R$ {prod?.sale_price || '99,90'}</span>
+                        </ElementoVisual>, salePriceStyle, setSalePriceStyle)}
+                    {renderElement('buttonStyle',
+                        <ElementoVisual styleConfig={buttonStyle} className="bg-blue-600 text-white rounded-lg font-bold">
+                            <span>Comprar</span>
+                        </ElementoVisual>, buttonStyle, setButtonStyle)}
+                </div>
             </div>
         </div>
     );

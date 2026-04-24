@@ -1,0 +1,61 @@
+.product-card-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    width: auto !important;
+}
+
+.product-grid-section .swiper-wrapper {
+    display: flex !important;
+    flex-direction: row !important;
+
+}
+
+.product-grid-section .swiper-slide {
+    width: auto !important;  
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-start;
+    overflow: visible !important; 
+    flex-shrink: 0 !important;
+}
+
+.product-grid-section .swiper-slide:first-child {
+    z-index: 100 !important;
+}
+
+.product-grid-section .swiper-button-next, 
+.product-grid-section .swiper-button-prev {
+    color: #2563eb !important;
+    background: white;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    top: 45% !important;
+}
+
+@media (max-width: 466px) {
+    .product-card-wrapper {
+        width: auto !important; 
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        overflow: visible !important;
+    }
+}
+
+@media (max-width: 437px) {
+    .product-card-wrapper {
+        width: auto !important; 
+        display: flex;
+        justify-content: center;
+        overflow: visible !important;
+        align-items: flex-start;
+    }
+
+    /* Ajuste de espaçamento para as bolinhas da paginação não sobreporem o card */
+    .product-grid-section .swiper {
+        padding-bottom: 80px !important;
+    }
+}
