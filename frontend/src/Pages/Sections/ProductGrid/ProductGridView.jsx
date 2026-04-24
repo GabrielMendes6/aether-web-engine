@@ -30,7 +30,7 @@ export default function ProductGridView({
         observeParents: true,
         watchSlidesProgress: true,
         slidesOffsetAfter: isMobile ? 0 : 40,
-        navigation: !isMobile,
+        //navigation: !isMobile,
         pagination: { clickable: true },
     };
 

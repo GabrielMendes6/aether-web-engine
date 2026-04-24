@@ -21,6 +21,7 @@ const ElementoVisual = ({ styleConfig, children, className, isPromoPrice = false
         borderRadius: baseStyle.borderRadius ? `${baseStyle.borderRadius}` : '0px',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
+        userSelect: 'none' // Impede seleção de texto durante o arraste
     };
 
     return (
@@ -48,24 +49,30 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
     const modeRef = useRef(activeMode);
     useEffect(() => { modeRef.current = activeMode; }, [activeMode]);
 
-    const [cardSize, setCardSize] = useState({ width: 300, height: 450 });
-    const [imageStyle, setImageStyle] = useState({ x: 0, y: 0, width: 300, height: 250 });
-    const [nameStyle, setNameStyle] = useState({ x: 16, y: 270, width: 260, height: 25 });
-    const [priceStyle, setPriceStyle] = useState({ x: 16, y: 310, width: 150, height: 30 });
-    const [salePriceStyle, setSalePriceStyle] = useState({ x: 16, y: 355, width: 150, height: 30 });
-    const [buttonStyle, setButtonStyle] = useState({ x: 16, y: 380, width: 268, height: 40 });
+    // Estados Locais para posições e tamanhos
+    const [cardSize, setCardSize] = useState({ width: 394, height: 551 });
+    const [imageStyle, setImageStyle] = useState({ x: 21, y: 17, width: 355, height: 323 });
+    const [nameStyle, setNameStyle] = useState({ x: 0, y: 364, width: 394, height: 32 });
+    const [priceStyle, setPriceStyle] = useState({ x: 0, y: 427, width: 394, height: 30 });
+    const [salePriceStyle, setSalePriceStyle] = useState({ x: 0, y: 457, width: 394, height: 28 });
+    const [buttonStyle, setButtonStyle] = useState({ x: 17, y: 500, width: 363, height: 40 });
     const [scale, setScale] = useState(1);
 
+    // --- SINCRONIZAÇÃO COM O PAI ---
     useEffect(() => {
+        // Se estivermos editando ativamente o Master, bloqueamos a sobreposição de estado vinda do Pai
         if (draggingRef.current) return;
-        setCardSize(getStyleConfig('cardStyle') || { width: 300, height: 450 });
-        setImageStyle(getStyleConfig('imageStyle') || { x: 0, y: 0, width: 300, height: 250 });
-        setNameStyle(getStyleConfig('nameStyle') || { x: 16, y: 270, width: 260, height: 25 });
-        setPriceStyle(getStyleConfig('priceStyle') || { x: 16, y: 310, width: 150, height: 30 });
-        setSalePriceStyle(getStyleConfig('salePriceStyle') || { x: 16, y: 355, width: 150, height: 30 });
-        setButtonStyle(getStyleConfig('buttonStyle') || { x: 16, y: 380, width: 268, height: 40 });
+
+        setCardSize(getStyleConfig('cardStyle') || { width: 394, height: 551 });
+        setImageStyle(getStyleConfig('imageStyle') || { x: 21, y: 17, width: 355, height: 323 });
+        setNameStyle(getStyleConfig('nameStyle') || { x: 0, y: 364, width: 394, height: 32 });
+        setPriceStyle(getStyleConfig('priceStyle') || { x: 0, y: 427, width: 394, height: 30 });
+        setSalePriceStyle(getStyleConfig('salePriceStyle') || { x: 0, y: 457, width: 394, height: 28 });
+        setButtonStyle(getStyleConfig('buttonStyle') || { x: 17, y: 500, width: 363, height: 40 });
+
     }, [style, promoStyle, activeMode]);
 
+    // --- LÓGICA DE SCALE (MOBILE) ---
     useEffect(() => {
         if (isEditing) {
             setScale(1);
@@ -73,31 +80,40 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
         }
         const handleResize = () => {
             const threshold = 438;
-            
             if (window.innerWidth < threshold) {
                 const availableWidth = window.innerWidth * 0.85; 
                 setScale(availableWidth / cardSize.width);
             } else {
                 setScale(1);
             }
-
-            // Dentro do useEffect do handleResize no ProdutoItem.jsx
-            console.log(`[DEBUG ITEM] ID: ${prod.id} | Scale: ${scale} | VisualWidth: ${cardSize.width * scale}`);
         };
         handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [cardSize.width, isEditing]);
 
+    // --- SALVAMENTO E ATUALIZAÇÃO LOCAL ---
     const handleSave = (key, data) => {
         draggingRef.current = true;
+        
+        // Atualiza o estado LOCAL imediatamente para evitar o "pulo" do Rnd
+        if (key === 'nameStyle') setNameStyle(data);
+        if (key === 'priceStyle') setPriceStyle(data);
+        if (key === 'salePriceStyle') setSalePriceStyle(data);
+        if (key === 'buttonStyle') setButtonStyle(data);
+        if (key === 'imageStyle') setImageStyle(data);
+        if (key === 'cardStyle') setCardSize(data);
+
         const currentMode = modeRef.current;
         if (typeof updateContent === 'function') {
             const baseData = currentMode === 'promoStyle' ? (promoStyle || {}) : (style || {});
             updateContent({ [currentMode]: { ...baseData, [key]: data } });
         }
+
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-        syncTimeoutRef.current = setTimeout(() => { draggingRef.current = false; }, 500);
+        syncTimeoutRef.current = setTimeout(() => { 
+            draggingRef.current = false; 
+        }, 1200); // Tempo para o banco processar antes de re-habilitar sync
     };
 
     const renderElement = (key, content, pos, setPos, className = "") => {
@@ -106,16 +122,20 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
             left: `${pos.x}px`, top: `${pos.y}px`, width: `${pos.width}px`, height: `${pos.height}px`,
             zIndex: pos.zIndex || 10, position: 'absolute'
         };
+
+        // Bloqueio de Drag nativo no Link e Conteúdo
         const linkedContent = (
-            <a href={`/produtos/${prod.slug}`}>
-                <div className="w-full h-full overflow-hidden flex items-center justify-center">
+            <a href={`/produtos/${prod.slug}`} draggable="false" className="select-none">
+                <div className="w-full h-full overflow-hidden flex items-center justify-center pointer-events-none">
                     {content}
                 </div>
             </a>
         );
+
         if (!isEditing || !isTemplateMaster) {
             return <div className={`absolute ${className}`} style={geometry}>{linkedContent}</div>;
         }
+
         return (
             <Rnd
                 size={{ width: Math.round(pos.width), height: Math.round(pos.height) }}
@@ -130,8 +150,6 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
         );
     };
 
-    // --- LÓGICA DE DIMENSÕES VISUAIS ---
-    // Calculamos quanto espaço o card realmente ocupa após o scale
     const visualWidth = cardSize.width * scale;
     const visualHeight = cardSize.height * scale;
 
@@ -145,12 +163,10 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'flex-start',
-                // O z-index maior no Master impede que vizinhos fiquem por cima dele no editor
                 zIndex: isTemplateMaster ? 50 : 1,
             }}
         >
             <div style={{ 
-                // O card interno mantém o tamanho nominal (300x450) para os elementos Rnd funcionarem
                 width: `${cardSize.width}px`, 
                 height: `${cardSize.height}px`,
                 position: 'absolute',
@@ -158,11 +174,11 @@ const ProdutoItem = ({ prod, isEditing, updateContent, style, promoStyle, editMo
                 left: '50%',
                 transform: `translateX(-50%) scale(${scale})`,
                 transformOrigin: 'top center',
-                transition: 'transform 0.2s ease-out',
+                transition: draggingRef.current ? 'none' : 'transform 0.2s ease-out',
             }}>
                 <div className={`relative bg-white shadow-lg w-full h-full rounded-[16px] overflow-hidden border ${activeMode === 'promoStyle' ? 'border-red-100' : 'border-slate-100'}`}>
                     {renderElement('imageStyle',
-                        <img src={prod?.image_url} className="w-full h-full object-fill pointer-events-none" alt="" />,
+                        <img src={prod?.image_url} className="w-full h-full object-fill" alt="" draggable="false" />,
                         imageStyle, setImageStyle
                     )}
                     {renderElement('nameStyle', <ElementoVisual styleConfig={nameStyle} className="px-2"><span>{prod?.name}</span></ElementoVisual>, nameStyle, setNameStyle)}

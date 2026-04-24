@@ -1,24 +1,24 @@
-  import axios from 'axios';
+import axios from 'axios';
 
-  const api = axios.create({
-    baseURL: 'http://localhost',
-    //baseURL: 'http://54.157.214.133',
-    withCredentials: true,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    }
-  });
+const api = axios.create({
+  //baseURL: 'http://localhost',
+  baseURL: '/aether',
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }
+});
 
-  api.defaults.xsrfCookieName = 'XSRF-TOKEN';
-  api.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
+api.defaults.xsrfCookieName = 'XSRF-TOKEN';
+api.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 
-  /**
-   * INTERCEPTOR:
-   * Antes de cada requisição sair, verificamos se existe um token no LocalStorage.
-   * Se existir, injetamos no Header Authorization para que o Laravel Sanctum nos reconheça.
-   */
-  api.interceptors.request.use(async (config) => {
+/**
+ * INTERCEPTOR:
+ * Antes de cada requisição sair, verificamos se existe um token no LocalStorage.
+ * Se existir, injetamos no Header Authorization para que o Laravel Sanctum nos reconheça.
+ */
+api.interceptors.request.use(async (config) => {
   // 1. Bearer Token
   const token = localStorage.getItem('@App:token');
   if (token) {
@@ -40,4 +40,4 @@
   return config;
 }, (error) => Promise.reject(error));
 
-  export default api;
+export default api;

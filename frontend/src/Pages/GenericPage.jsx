@@ -20,8 +20,6 @@ export default function GenericPage() {
     const isEditorMode = !!useMatch("/admin/editor/:slug");
     const [editMode, setEditMode] = useState('style');
 
-    console.log('Modo carregado: ' + editMode);
-
     const handleUpdateContent = (index, newContent) => {
         console.log("--- DEBUG GENERIC PAGE ---");
         console.log("ID da Seção:", sections[index]?.id);
@@ -42,7 +40,7 @@ export default function GenericPage() {
             setSections(res.data);
             setHasChanges(false);
         } catch (err) {
-            console.error("[Jarvis] Erro ao carregar:", err);
+            console.error("Erro ao carregar: ", err);
         } finally {
             setLoading(false);
         }

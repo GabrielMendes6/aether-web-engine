@@ -5,10 +5,10 @@ import {
     ImagePlus, Layout, Move, MousePointer2, Tag, Settings
 } from 'lucide-react';
 import api from '../../../Services/api';
-import ListSection from "./ListSection";
-import RenderLinkSection from "./LinkSection";
-import RenderImageSection from './ImageSection';
-import RenderTypographySection from './TypographySection';
+import ListSection from "./ComponentStyles/ListSection";
+import RenderLinkSection from "./ComponentStyles/LinkSection";
+import RenderImageSection from './ComponentStyles/ImageSection';
+import RenderTypographySection from './ComponentStyles/TypographySection';
 
 export default function EditorSidebar({ activeSection, onClose, onUpdate, currentBreakpoint, selectedElementId, editMode, setEditMode }) {
     /*

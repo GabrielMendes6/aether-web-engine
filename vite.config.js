@@ -14,5 +14,19 @@ export default defineConfig({
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
+        server: {
+            proxy: {
+                '/aether': {
+                    target: 'http://54.157.214.133',
+                    changeOrigin: true,
+                    secure: false,
+                },
+                '/sanctum': {
+                    target: 'http://54.157.214.133',
+                    changeOrigin: true,
+                    secure: false,
+                }
+            }
+        }
     },
 });

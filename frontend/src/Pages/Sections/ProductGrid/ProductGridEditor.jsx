@@ -43,6 +43,65 @@ export default function ProductGridEditor({
                         overflow: ${isMobile ? 'visible' : 'hidden'} !important; 
                         padding: 20px 4px 80px 4px !important; 
                     }
+                    .product-card-wrapper {
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        box-sizing: border-box !important;
+                        width: auto !important;
+                    }
+
+                    .product-grid-section .swiper-wrapper {
+                        display: flex !important;
+                        flex-direction: row !important;
+
+                    }
+
+                    .product-grid-section .swiper-slide {
+                        width: auto !important;  
+                        display: flex; 
+                        justify-content: center; 
+                        align-items: flex-start;
+                        overflow: visible !important; 
+                        flex-shrink: 0 !important;
+                    }
+
+                    .product-grid-section .swiper-slide:first-child {
+                        z-index: 100 !important;
+                    }
+
+                    .product-grid-section .swiper-button-next, 
+                    .product-grid-section .swiper-button-prev {
+                        color: #2563eb !important;
+                        background: transparent;
+                        width: 40px !important;
+                        height: 40px !important;
+                        border-radius: 50%;
+                        top: 45% !important;
+                    }
+
+                    @media (max-width: 466px) {
+                        .product-card-wrapper {
+                            width: auto !important; 
+                            display: flex;
+                            justify-content: center;
+                            align-items: flex-start;
+                            overflow: visible !important;
+                        }
+                    }
+
+                    @media (max-width: 437px) {
+                        .product-card-wrapper {
+                            width: auto !important; 
+                            display: flex;
+                            justify-content: center;
+                            overflow: visible !important;
+                            align-items: flex-start;
+                        }
+
+                        .product-grid-section .swiper {
+                            padding-bottom: 80px !important;
+                        }
+                    }
                 `}
             </style>
 
